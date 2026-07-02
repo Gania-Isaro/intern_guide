@@ -1,5 +1,8 @@
-from flask import Blueprint, jsonify, request
-from werkzeug.security import generate_password_hash
+from datetime import datetime, timedelta, timezone
+
+import jwt
+from flask import Blueprint, current_app, jsonify, request
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db
 
@@ -7,6 +10,9 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 # admin accounts are created by hand, nobody registers as one
 ALLOWED_ROLES = ("student", "company_owner")
+
+COOKIE_NAME = "token"
+TOKEN_LIFETIME = timedelta(days=1)
 
 
 @bp.post("/register")
@@ -39,3 +45,42 @@ def register():
     db.commit()
 
     return jsonify(id=cursor.lastrowid, name=name, email=email, role=role), 201
+
+
+@bp.post("/login")
+def login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify(error="email and password are required"), 400
+
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    # same message either way, so we don't reveal which emails exist
+    if user is None or not check_password_hash(user["password_hash"], password):
+        return jsonify(error="wrong email or password"), 401
+
+    token = jwt.encode(
+        {
+            "sub": str(user["id"]),
+            "role": user["role"],
+            "exp": datetime.now(timezone.utc) + TOKEN_LIFETIME,
+        },
+        current_app.config["SECRET_KEY"],
+        algorithm="HS256",
+    )
+
+    response = jsonify(id=user["id"], name=user["name"], email=user["email"], role=user["role"])
+    response.set_cookie(
+        COOKIE_NAME,
+        token,
+        max_age=int(TOKEN_LIFETIME.total_seconds()),
+        httponly=True,
+        secure=current_app.config["COOKIE_SECURE"],
+        samesite="Lax",
+    )
+    return response
