@@ -11,3 +11,23 @@ function inputClass(hasError: boolean) {
     ? `${base} border-red-500 focus:ring-red-200`
     : `${base} border-gray-300 focus:ring-blue-200`;
 }
+export default function RegisterPage() {
+  const router = useRouter();
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "student",
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+}
