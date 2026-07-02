@@ -58,3 +58,16 @@ export function validateRegisterForm(formData: {
 
   return errors;
 }
+
+
+export function validateLoginForm(formData: { email: string; password: string }) {
+  const errors: Record<string, string> = {};
+
+  const emailError = validateEmail(formData.email);
+  if (emailError) errors.email = emailError;
+
+  const passwordError = validatePassword(formData.password);
+  if (passwordError) errors.password = passwordError;
+
+  return errors;
+}
