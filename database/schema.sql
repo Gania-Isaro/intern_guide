@@ -41,3 +41,51 @@ CREATE TABLE internships (
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
+
+CREATE TABLE reviews (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  company_id  INT NOT NULL,
+  user_id     INT NOT NULL,
+  -- the four category scores students rate, 1 to 5 stars each
+  mentorship  TINYINT NOT NULL,
+  tasks       TINYINT NOT NULL,
+  learning    TINYINT NOT NULL,
+  environment TINYINT NOT NULL,
+  -- overall score, the average of the four categories
+  rating      DECIMAL(2,1) NOT NULL,
+  comment     TEXT,
+  status      ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  -- one review per student per company
+  UNIQUE KEY uq_review_user_company (user_id, company_id),
+  CHECK (mentorship BETWEEN 1 AND 5),
+  CHECK (tasks BETWEEN 1 AND 5),
+  CHECK (learning BETWEEN 1 AND 5),
+  CHECK (environment BETWEEN 1 AND 5),
+  CHECK (rating BETWEEN 1 AND 5)
+);
+
+CREATE TABLE verification_proofs (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  company_id INT NOT NULL,
+  -- cleared once the proof is reviewed, the file itself gets deleted for privacy
+  file_path  VARCHAR(255),
+  status     ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+
+CREATE TABLE replies (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  review_id  INT NOT NULL,
+  -- the company owner who wrote the reply
+  user_id    INT NOT NULL,
+  body       TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
