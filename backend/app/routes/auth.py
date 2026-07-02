@@ -84,3 +84,36 @@ def login():
         samesite="Lax",
     )
     return response
+
+
+@bp.post("/logout")
+def logout():
+    response = jsonify(message="logged out")
+    response.delete_cookie(COOKIE_NAME)
+    return response
+
+
+@bp.get("/me")
+def me():
+    token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        return jsonify(error="not logged in"), 401
+
+    try:
+        payload = jwt.decode(
+            token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+        )
+    except jwt.InvalidTokenError:
+        return jsonify(error="session expired, please log in again"), 401
+
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id, name, email, role, is_verified FROM users WHERE id = %s",
+        (payload["sub"],),
+    )
+    user = cursor.fetchone()
+    if user is None:
+        return jsonify(error="not logged in"), 401
+
+    user["is_verified"] = bool(user["is_verified"])
+    return jsonify(user)
