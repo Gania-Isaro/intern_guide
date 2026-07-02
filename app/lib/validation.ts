@@ -7,3 +7,19 @@ export function validateEmail(email: string): string | null {
   }
   return null;
 }
+export function validatePassword(password: string): string | null {
+  if (!password) {
+    return "Password is required";
+  }
+  if (password.length < 8) {
+    return "Password must be at least 8 characters";
+  }
+  return null;
+}
+
+export function validateFullName(fullName: string): string | null {
+  if (!fullName.trim()) {
+    return "Full name is required";
+  }
+  return null;
+}
