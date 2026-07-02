@@ -1,0 +1,66 @@
+/* Loads Tailwind's base styles, its component classes, and utility classes like "flex" or "p-4" */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* This is the ACTUAL color values. tailwind.config.ts only refers to
+   names like --primary — this file says what --primary really is.
+   To retheme the whole site, this is the ONLY place to change a color. */
+@layer base {
+  :root {
+    /* Colors are written as H S L numbers (Hue Saturation Lightness),
+       without "hsl()" around them, so tailwind.config.ts can combine
+       them like hsl(var(--primary)). */
+    --background: 0 0% 100%;       /* page background = white */
+    --foreground: 222 47% 11%;     /* main text = near-black */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 220 83% 45%;              /* brand blue */
+    --primary-foreground: 0 0% 100%;     /* white text on blue buttons */
+
+    --secondary: 210 20% 96%;            /* light gray background */
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;     /* gray text */
+
+    --accent: 210 20% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --success: 142 71% 30%;              /* green — "verified" */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 32 95% 44%;               /* amber — "pending" */
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 45%;            /* red — errors/rejected */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;               /* light gray line color */
+    --input: 214 32% 91%;
+    --ring: 220 83% 45%;                 /* focus glow color */
+
+    --radius: 0.625rem;                  /* default corner roundness */
+  }
+}
+
+/* Default styles applied to the whole page */
+@layer base {
+  * {
+    @apply border-border; /* every border uses our gray by default */
+  }
+  body {
+    @apply bg-background text-foreground font-sans; /* white bg, dark text, Inter font */
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display; /* headings use the Manrope font */
+  }
+}
