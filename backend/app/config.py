@@ -15,3 +15,6 @@ class Config:
     DB_USER = os.getenv("DB_USER", "root")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "internguide")
+
+    # keep False for local http, set to true in production where we have https
+    COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
