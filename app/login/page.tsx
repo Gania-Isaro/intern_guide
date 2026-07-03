@@ -9,7 +9,7 @@ function inputClass(hasError: boolean) {
  const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
   return hasError
    ? `${base} border-red-500 focus:ring-red-200`
-   : `${base} border-gray-300 focus:ring-blue-200`;
+   : `${base} border-gray-300 focus:ring-green-200`;
 }
 
 export default function LoginPage() {
@@ -47,20 +47,21 @@ export default function LoginPage() {
     if (!result.ok) {
       setSubmitError(result.error);
       return;
-    }  
+    }
 
-router.push("/");
+    router.push("/");
+  }
 
-  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-200"
       >
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Log in to your account
+        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+          Welcome back
         </h1>
+        <p className="text-gray-600 text-sm mb-6">Log in to manage your reviews.</p>
 
         {submitError && (
           <p className="text-red-500 text-sm mb-4">{submitError}</p>
@@ -81,7 +82,7 @@ router.push("/");
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
             Password
           </label>
@@ -96,21 +97,31 @@ router.push("/");
           {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
         </div>
 
+        <p className="text-sm text-right mb-6">
+          <a href="#" className="text-green-600 hover:underline">
+            Forgot password?
+          </a>
+        </p>
+
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Logging in..." : "Log in"}
         </button>
 
         <p className="text-sm text-gray-600 mt-4 text-center">
-          Don&apos;t have an account?{" "}
-          <a href="/register" className="text-blue-600 hover:underline">
-            Sign up
+          or
+        </p>
+
+        <p className="text-sm text-gray-600 mt-4 text-center">
+          New to InternGuide?{" "}
+          <a href="/register" className="text-green-600 hover:underline">
+            Create an account
           </a>
         </p>
       </form>
     </div>
   );
-}}
+}

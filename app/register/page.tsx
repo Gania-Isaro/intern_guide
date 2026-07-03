@@ -9,7 +9,7 @@ function inputClass(hasError: boolean) {
   const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
   return hasError
     ? `${base} border-red-500 focus:ring-red-200`
-    : `${base} border-gray-300 focus:ring-blue-200`;
+    : `${base} border-gray-300 focus:ring-green-200`;
 }
 export default function RegisterPage() {
   const router = useRouter();
@@ -63,6 +63,7 @@ async function handleSubmit(e: React.FormEvent) {
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">
           Create your account
         </h1>
+        <p className="text-gray-600 text-sm mb-6">Join to read and write verified reviews.</p>
 
         {submitError && (
           <p className="text-red-500 text-sm mb-4">{submitError}</p>
@@ -149,14 +150,18 @@ async function handleSubmit(e: React.FormEvent) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
 
+        <p className="text-xs text-gray-500 mt-4 text-center">
+          By creating an account you agree to our Terms of Use and Privacy Policy.
+        </p>
+
         <p className="text-sm text-gray-600 mt-4 text-center">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600 hover:underline">
+          <a href="/login" className="text-green-600 hover:underline">
             Log in
           </a>
         </p>
