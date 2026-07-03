@@ -30,6 +30,7 @@ def register():
     cursor = db.cursor()
     cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
     if cursor.fetchone():
+        cursor.close()
         return jsonify(error="this email is already registered"), 409
 
     cursor.execute(
@@ -37,5 +38,6 @@ def register():
         (name, email, generate_password_hash(password), role),
     )
     db.commit()
+    cursor.close()
 
     return jsonify(id=cursor.lastrowid, name=name, email=email, role=role), 201
