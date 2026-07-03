@@ -48,7 +48,6 @@ export default function LoginPage() {
       setSubmitError(result.error);
       return;
     }  
-}
 
 router.push("/");
 
@@ -114,4 +113,4 @@ router.push("/");
       </form>
     </div>
   );
-}
+}}
