@@ -50,9 +50,9 @@ export default function LoginPage() {
     }  
 }
 
-router.push("/");{
-  
+router.push("/");
 
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <form
@@ -114,4 +114,4 @@ router.push("/");{
       </form>
     </div>
   );
-}}
+}

@@ -19,7 +19,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "student",
+    role: "recent intern",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -141,7 +141,7 @@ async function handleSubmit(e: React.FormEvent) {
             onChange={handleChange}
             className={inputClass(false)}
           >
-            <option value="student">Student / Intern seeker</option>
+            <option value="student">Verified Intern</option>
             <option value="company_owner">Company owner</option>
           </select>
         </div>
