@@ -1,5 +1,5 @@
--- InternGuide database schema
--- recreate the database from scratch with:  mysql -u root < database/schema.sql
+-- InternGuide database schema (requires MySQL 8.0.16+ for CHECK constraint enforcement)
+-- initialize schema: mysql -u root < database/schema.sql (for a full rebuild, drop the database first)
 
 CREATE DATABASE IF NOT EXISTS internguide
   CHARACTER SET utf8mb4
