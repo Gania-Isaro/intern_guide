@@ -1,120 +1,103 @@
-// This file tells Tailwind CSS what colors, fonts, sizes and spacing
-// our whole app is allowed to use. Instead of typing random values like
-// "16px" or "#1D4ED8" everywhere, every component pulls from here.
+// This file defines every color, font, size, and spacing value our app
+// is allowed to use — pulled directly from the Figma design file, so
+// what we build in code matches what's designed.
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"], // dark mode can be turned on later by adding a "dark" class — not used yet
+  darkMode: ["class"], // not used yet, but ready if we ever add dark mode
 
-  // Tells Tailwind which files to scan for class names like "bg-primary"
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
   ],
 
   theme: {
-    // The "container" is the centered content box every page uses,
-    // so pages don't stretch edge-to-edge on a wide screen.
+    // The centered content box every page uses
     container: {
       center: true,
       padding: "1.5rem",
       screens: {
-        "2xl": "1280px", // max width on very large screens
+        "2xl": "1280px",
       },
     },
 
     extend: {
-      // COLORS — named by what they mean (primary, success, warning...)
-      // not by the actual color (blue, green...), so if we ever change
-      // the color later, we only edit it in ONE place (globals.css).
+      // COLORS — named by meaning (primary, ink, paper), not by the
+      // actual color name, so changing a color later only means
+      // editing one value in globals.css, not every component.
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))", // the glow around a focused input/button
         background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))", // main text color
+        foreground: "hsl(var(--foreground))",
 
+        paper: "hsl(var(--paper))", // light gray-white, used for input backgrounds
+
+        // Text colors — three shades of the same dark green-gray ("ink")
+        ink: {
+          DEFAULT: "hsl(var(--ink))",             // main text
+          secondary: "hsl(var(--ink-secondary))", // slightly lighter text
+          muted: "hsl(var(--ink-muted))",         // faded/placeholder text
+        },
+
+        // The ONE accent color in the whole design — green. Used for
+        // primary buttons, links, and the "verified" badge.
         primary: {
-          DEFAULT: "hsl(var(--primary))", // main brand blue
-          foreground: "hsl(var(--primary-foreground))", // text color ON TOP of primary
+          DEFAULT: "hsl(var(--primary))",
+          deep: "hsl(var(--primary-deep))", // a darker shade of the same green
+          tint: "hsl(var(--primary-tint))", // a very light background version
+          foreground: "hsl(var(--primary-foreground))", // text color on top of primary
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+        // Used only for "pending" status badges
+        pending: {
+          DEFAULT: "hsl(var(--pending))",
+          tint: "hsl(var(--pending-tint))",
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))", // quiet background, e.g. light gray box
-          foreground: "hsl(var(--muted-foreground))", // quiet gray text
+        // Used only for "rejected"/error states
+        danger: {
+          DEFAULT: "hsl(var(--danger))",
+          tint: "hsl(var(--danger-tint))",
         },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        // used ONLY for "verified" / approved things — keeps its meaning consistent
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
-        // used for "pending" / not-yet-verified things
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
-        },
-        // used for errors, delete buttons, rejected reviews
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
+
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
       },
 
-      // FONTS — "display" = headings, "sans" = normal body text
+      // FONTS — "display" for headings/buttons, "sans" for body text
       fontFamily: {
-        display: ["var(--font-manrope)", "system-ui", "sans-serif"],
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-poppins)", "system-ui", "sans-serif"],
+        sans: ["var(--font-nunito-sans)", "system-ui", "sans-serif"],
       },
 
-      // FONT SIZES — a fixed scale so every heading/paragraph on the
-      // site uses one of these sizes, instead of random custom sizes.
+      // FONT SIZES — matched exactly to the text styles shown in Figma
       fontSize: {
-        xs: ["0.75rem", { lineHeight: "1rem" }],       // 12px — tiny captions
-        sm: ["0.875rem", { lineHeight: "1.25rem" }],    // 14px — labels
-        base: ["1rem", { lineHeight: "1.5rem" }],       // 16px — normal body text
-        lg: ["1.125rem", { lineHeight: "1.75rem" }],    // 18px
-        xl: ["1.25rem", { lineHeight: "1.75rem" }],     // 20px — card titles
-        "2xl": ["1.5rem", { lineHeight: "2rem" }],      // 24px — section headings
-        "3xl": ["1.875rem", { lineHeight: "2.25rem" }], // 30px — page titles
-        "4xl": ["2.25rem", { lineHeight: "2.5rem" }],   // 36px — big hero heading
+        label: ["13px", { lineHeight: "normal", fontWeight: "600" }],       // form field labels
+        body: ["15px", { lineHeight: "24px" }],                              // normal paragraph text
+        "card-title": ["16px", { lineHeight: "normal", fontWeight: "500" }], // e.g. company name on a card
+        heading: ["28px", { lineHeight: "32px", fontWeight: "600" }],        // section headings
+        display: ["52px", { lineHeight: "40px", fontWeight: "600" }],        // big hero text
+        badge: ["12.5px", { lineHeight: "normal", fontWeight: "600" }],      // small badge text
       },
 
-      // SPACING — named shortcuts for common gaps/padding, so we write
-      // "gap-md" instead of guessing a random pixel number every time.
-      spacing: {
-        xs: "0.25rem",  // 4px
-        sm: "0.5rem",   // 8px
-        md: "1rem",     // 16px
-        lg: "1.5rem",   // 24px
-        xl: "2rem",     // 32px
-        "2xl": "3rem",  // 48px
-        "3xl": "4rem",  // 64px
-      },
-
-      // Rounded corners — small/medium/large versions of one base value
+      // ROUNDED CORNERS — a different roundness for each type of element
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        chip: "8px",      // small pill-shaped elements
+        control: "10px",  // buttons and inputs
+        card: "16px",     // cards
+        modal: "20px",    // popups/dialogs
+        full: "999px",    // fully round, used for badges
+      },
+
+      // The one soft shadow used everywhere in the design — never a hard/dark shadow
+      boxShadow: {
+        soft: "0px 12px 32px 0px rgba(24, 36, 32, 0.05)",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")], // adds ready-made animation classes (used by the Dialog)
+  plugins: [require("tailwindcss-animate")], // ready-made animation classes (used by dialogs/popups)
 };
 
 export default config;

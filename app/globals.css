@@ -1,66 +1,54 @@
-/* Loads Tailwind's base styles, its component classes, and utility classes like "flex" or "p-4" */
+/* Loads Tailwind's base styles, components, and utility classes */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* This is the ACTUAL color values. tailwind.config.ts only refers to
-   names like --primary — this file says what --primary really is.
-   To retheme the whole site, this is the ONLY place to change a color. */
+/* This is where the ACTUAL color values live. tailwind.config.ts only
+   refers to names like --primary — this file says what --primary
+   really is. To change a color everywhere, edit ONLY this file. */
 @layer base {
   :root {
-    /* Colors are written as H S L numbers (Hue Saturation Lightness),
-       without "hsl()" around them, so tailwind.config.ts can combine
-       them like hsl(var(--primary)). */
-    --background: 0 0% 100%;       /* page background = white */
-    --foreground: 222 47% 11%;     /* main text = near-black */
+    /* Colors written as Hue Saturation Lightness numbers, no "hsl()"
+       wrapper, so tailwind.config.ts can combine them as hsl(var(--x)) */
+    --background: 0 0% 100%;   /* white */
+    --paper: 120 8% 97%;        /* very light gray, for input backgrounds */
+
+    --foreground: 152 12% 13%;  /* main dark text color */
+    --ink: 152 12% 13%;
+    --ink-secondary: 140 7% 35%;
+    --ink-muted: 132 6% 61%;
+    --border: 132 12% 90%;      /* light gray line color */
+    --input: 132 12% 90%;
+
+    /* The single green accent color, used for anything "primary" or "verified" */
+    --primary: 158 68% 30%;
+    --primary-deep: 160 71% 22%;
+    --primary-tint: 150 38% 93%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 158 68% 30%;        /* focus glow uses the same green */
+
+    /* Amber, only for "pending" status */
+    --pending: 39 74% 34%;
+    --pending-tint: 42 55% 90%;
+
+    /* Red, only for "rejected"/error states */
+    --danger: 4 48% 47%;
+    --danger-tint: 5 50% 94%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 220 83% 45%;              /* brand blue */
-    --primary-foreground: 0 0% 100%;     /* white text on blue buttons */
-
-    --secondary: 210 20% 96%;            /* light gray background */
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;     /* gray text */
-
-    --accent: 210 20% 96%;
-    --accent-foreground: 222 47% 11%;
-
-    --success: 142 71% 30%;              /* green — "verified" */
-    --success-foreground: 0 0% 100%;
-
-    --warning: 32 95% 44%;               /* amber — "pending" */
-    --warning-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 45%;            /* red — errors/rejected */
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 214 32% 91%;               /* light gray line color */
-    --input: 214 32% 91%;
-    --ring: 220 83% 45%;                 /* focus glow color */
-
-    --radius: 0.625rem;                  /* default corner roundness */
+    --card-foreground: 152 12% 13%;
   }
 }
 
-/* Default styles applied to the whole page */
+/* Default styles for the whole page */
 @layer base {
   * {
     @apply border-border; /* every border uses our gray by default */
   }
   body {
-    @apply bg-background text-foreground font-sans; /* white bg, dark text, Inter font */
+    @apply bg-background text-foreground font-sans; /* white bg, dark text, body font */
   }
-  h1,
-  h2,
-  h3,
-  h4 {
-    @apply font-display; /* headings use the Manrope font */
+  h1, h2, h3, h4 {
+    @apply font-display; /* headings use the heading font */
   }
 }
