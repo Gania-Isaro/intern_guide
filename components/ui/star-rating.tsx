@@ -1,73 +1,55 @@
-"use client"; // needs useState for clicking/hovering, so it must run in the browser
+"use client"; // needs useState for hover/click, so it runs in the browser
 
 import * as React from "react";
-import { Star } from "lucide-react"; // the star icon, filled or outline
+import { Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 export interface StarRatingProps {
-  value: number;                        // the current rating, e.g. 4 or 4.3
-  onChange?: (value: number) => void;   // called when the user clicks a star (leave empty for display-only)
-  readOnly?: boolean;                   // true = just showing a rating, can't be clicked
+  value: number;                        // current rating, e.g. 4 or 4.3
+  onChange?: (value: number) => void;   // called when a star is clicked
+  readOnly?: boolean;                   // true = just display, can't click
   size?: "sm" | "md" | "lg";
-  showValue?: boolean;                  // true = also show the number next to the stars, e.g. "4.3"
+  showValue?: boolean;                  // true = also show the number, e.g. "4.3"
   className?: string;
 }
 
-const sizeMap = {
-  sm: "h-4 w-4",
-  md: "h-5 w-5",
-  lg: "h-7 w-7",
-};
+const sizeMap = { sm: "h-4 w-4", md: "h-4 w-4", lg: "h-6 w-6" }; // Figma's default star size is 16px
 
 function StarRating({ value, onChange, readOnly = false, size = "md", showValue = false, className }: StarRatingProps) {
-  // Tracks which star the mouse is currently hovering over, so stars
-  // light up as a preview before the user actually clicks.
+  // Tracks which star is being hovered, for a live preview before clicking
   const [hovered, setHovered] = React.useState<number | null>(null);
-
   const stars = [1, 2, 3, 4, 5];
-  // While hovering, show the hover preview; otherwise show the real value
-  const displayValue = hovered ?? value;
+  const displayValue = hovered ?? value; // show hover preview if hovering, else the real value
 
   return (
     <div className={cn("inline-flex items-center gap-1", className)}>
-      <div
-        className="inline-flex items-center gap-0.5"
-        role={readOnly ? "img" : "radiogroup"} // helps screen readers understand this is a rating
-        aria-label={readOnly ? `Rated ${value} out of 5 stars` : "Rate this internship out of 5 stars"}
-      >
+      <div className="inline-flex items-center gap-0.5" role={readOnly ? "img" : "radiogroup"}>
         {stars.map((star) => {
-          // Should THIS star be filled in, based on the rounded rating?
-          const filled = star <= Math.round(displayValue);
+          const filled = star <= Math.round(displayValue); // should this star be filled in?
           return (
             <button
               key={star}
               type="button"
-              disabled={readOnly} // can't click stars in read-only mode
-              aria-label={`${star} star${star > 1 ? "s" : ""}`}
-              aria-pressed={!readOnly && value === star}
-              onClick={() => onChange?.(star)}                    // tell the parent component the new rating
-              onMouseEnter={() => !readOnly && setHovered(star)}   // start hover preview
-              onMouseLeave={() => !readOnly && setHovered(null)}   // end hover preview
-              className={cn(
-                "transition-transform",
-                !readOnly && "cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
-                readOnly && "cursor-default"
-              )}
+              disabled={readOnly}
+              onClick={() => onChange?.(star)}
+              onMouseEnter={() => !readOnly && setHovered(star)}
+              onMouseLeave={() => !readOnly && setHovered(null)}
+              className={cn(!readOnly && "cursor-pointer hover:scale-110 transition-transform")}
             >
               <Star
                 className={cn(
                   sizeMap[size],
-                  // filled stars are amber/orange, empty stars are gray outlines
-                  filled ? "fill-warning text-warning" : "fill-transparent text-muted-foreground"
+                  // green when filled (the design's only accent color), gray outline when empty
+                  filled ? "fill-primary text-primary" : "fill-transparent text-ink-muted"
                 )}
               />
             </button>
           );
         })}
       </div>
-      {/* optional number next to the stars, e.g. "4.3" */}
-      {showValue && <span className="text-sm text-muted-foreground">{value.toFixed(1)}</span>}
+      {/* optional number next to the stars */}
+      {showValue && <span className="text-body text-ink-secondary">{value.toFixed(1)}</span>}
     </div>
   );
 }

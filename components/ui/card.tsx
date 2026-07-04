@@ -10,7 +10,8 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("rounded-lg border border-border bg-card text-card-foreground shadow-sm", className)}
+      // radius, background and shadow now match the CompanyCard in Figma
+      className={cn("rounded-card border border-border bg-white text-ink shadow-soft", className)}
       {...props}
     />
   )
@@ -25,18 +26,19 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardHeader.displayName = "CardHeader";
 
-// The big bold title text, e.g. a company name
+// The card title text, e.g. a company name — sized to match Figma's
+// "card-title" text style (16px, medium weight)
 const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn("text-xl font-semibold leading-none tracking-tight", className)} {...props} />
+    <h3 ref={ref} className={cn("text-card-title text-ink leading-none tracking-tight", className)} {...props} />
   )
 );
 CardTitle.displayName = "CardTitle";
 
-// Smaller gray subtitle text under the title
+// Smaller subtitle text under the title, e.g. "Software · Kigali"
 const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+    <p ref={ref} className={cn("text-sm text-ink-secondary", className)} {...props} />
   )
 );
 CardDescription.displayName = "CardDescription";
