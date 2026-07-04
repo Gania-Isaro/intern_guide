@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <AuthProvider>
           <Navbar />
-          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+          <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
         </AuthProvider>
       </body>
     </html>
