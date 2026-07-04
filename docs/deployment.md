@@ -1,0 +1,4 @@
+- Frontend: Vercel, root = 'frontend/'
+- Backend: Render/Railway, root = 'backend/', start command 'gunicorn run:app'
+- Database: managed MySQL instance (Railway/Clever Cloud)
+- Env vars set in each host's dashboard: DATABASE_URL, JWT_SECRET_KEY, SECRET_KEY

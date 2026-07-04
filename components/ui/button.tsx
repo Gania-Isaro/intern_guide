@@ -5,24 +5,32 @@ import { Loader2 } from "lucide-react"; // spinning loading icon
 
 import { cn } from "@/lib/utils";
 
-// Defines the 3 button looks: Primary (solid green), Secondary (white
-// with a border), and Ghost (no background, green text only).
+// Defines the button looks: Primary (solid green), Secondary (white
+// with a border), Ghost (no background, green text only), and Link
+// (text-link style, used by the navbar and homepage).
 const buttonVariants = cva(
   // classes applied to every button no matter the variant
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control px-6 py-3 " +
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control " +
     "font-display font-medium text-[15px] transition-colors focus-visible:outline-none " +
     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
     "disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-primary/90",     // solid green
-        secondary: "bg-white border border-border text-ink hover:bg-paper",    // outlined
-        ghost: "text-primary hover:bg-primary-tint",                           // text only
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90",  // solid green
+        secondary: "bg-white border border-border text-ink hover:bg-paper", // outlined
+        ghost: "text-primary hover:bg-primary-tint",                        // text only
+        link: "text-primary hover:text-primary-deep h-auto p-0",            // looks like a link
+      },
+      size: {
+        sm: "h-8 px-3 text-sm",
+        md: "px-6 py-3", // the default size from the Figma design
+        lg: "h-12 px-8",
       },
     },
     defaultVariants: {
       variant: "primary",
+      size: "md",
     },
   }
 );
@@ -30,16 +38,19 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean;  // if true, renders as the child element (e.g. a Link) instead of <button>
-  loading?: boolean;  // if true, shows a spinner and disables clicking
+  asChild?: boolean; // if true, renders as the child element (e.g. a Link) instead of <button>
+  loading?: boolean; // if true, shows a spinner and disables clicking
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, asChild = false, loading = false, disabled, children, ...props }, ref) => {
+  (
+    { className, variant, size, asChild = false, loading = false, disabled, children, ...props },
+    ref
+  ) => {
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
-        className={cn(buttonVariants({ variant, className }))}
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         disabled={disabled || loading}
         {...props}
