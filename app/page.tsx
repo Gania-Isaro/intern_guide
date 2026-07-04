@@ -1,65 +1,168 @@
-import Image from "next/image";
+import { Search, Upload, ShieldCheck, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export default function Home() {
+const STATS = [
+  { value: "128", label: "Companies listed" },
+  { value: "312", label: "Verified reviews" },
+  { value: "6", label: "Industries covered" },
+];
+
+const STEPS = [
+  {
+    icon: Upload,
+    title: "Upload your proof",
+    description:
+      "Add your internship certificate or offer letter when you submit a review. It's never shown publicly.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "We verify you",
+    description:
+      "An admin checks the proof, then the file is deleted. Only the green Verified badge remains.",
+  },
+  {
+    icon: Star,
+    title: "Your review counts",
+    description:
+      "Rate mentorship, tasks, learning and environment. Company averages update automatically.",
+  },
+];
+
+const RECENT_COMPANIES = [
+  {
+    initials: "KS",
+    name: "Kivu Software",
+    meta: "Software · Kigali",
+    rating: "4.6",
+    reviews: "23 reviews",
+    verified: "18 of 23 verified",
+  },
+  {
+    initials: "ID",
+    name: "Isoko Digital",
+    meta: "E-commerce · Kigali",
+    rating: "4.8",
+    reviews: "31 reviews",
+    verified: "26 of 31 verified",
+  },
+  {
+    initials: "AS",
+    name: "Akagera Systems",
+    meta: "Data & AI · Kigali",
+    rating: "4.2",
+    reviews: "17 reviews",
+    verified: "11 of 17 verified",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="space-y-20 pb-16">
+      <section className="flex flex-col items-center pt-12 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Every review is backed by proof
+        </span>
+
+        <h1 className="mt-5 max-w-2xl text-4xl font-bold text-foreground">
+          Know the internship before you sign.
+        </h1>
+
+        <p className="mt-4 max-w-xl text-muted-foreground">
+          Real reviews from verified interns in Rwanda — mentorship, tasks
+          and learning, rated by people who actually did the work.
+        </p>
+
+        <form className="mt-7 flex w-full max-w-lg gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search a company, e.g. Kivu Software"
+              disabled
+              className="w-full rounded-md border border-border py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground disabled:bg-muted"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <Button variant="primary" type="button" disabled>
+            Search
+          </Button>
+        </form>
+
+        <div className="mt-9 flex gap-10">
+          {STATS.map((s) => (
+            <div key={s.label} className="text-center">
+              <div className="text-2xl font-bold text-foreground">
+                {s.value}
+              </div>
+              <div className="text-xs text-muted-foreground">{s.label}</div>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
+
+      <section className="rounded-lg bg-muted px-6 py-14 text-center">
+        <span className="text-xs font-semibold uppercase tracking-wide text-accent-600">
+          How it works
+        </span>
+        <h2 className="mt-2 text-2xl font-bold text-foreground">
+          Trust is built in three steps
+        </h2>
+
+        <div className="mx-auto mt-8 grid max-w-4xl gap-5 sm:grid-cols-3">
+          {STEPS.map((step) => (
+            <div
+              key={step.title}
+              className="rounded-md border border-border bg-white p-5 text-left"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-50">
+                <step.icon className="h-4.5 w-4.5 text-accent-600" />
+              </div>
+              <h3 className="mt-3 text-sm font-semibold text-foreground">
+                {step.title}
+              </h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {step.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-6">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
+            Recently reviewed companies
+          </h2>
+          <Button variant="link" size="sm">
+            Browse all companies
+          </Button>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {RECENT_COMPANIES.map((c) => (
+            <div
+              key={c.name}
+              className="rounded-md border border-border bg-white p-4"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+                {c.initials}
+              </div>
+              <h3 className="mt-3 text-sm font-semibold text-foreground">
+                {c.name}
+              </h3>
+              <p className="text-xs text-muted-foreground">{c.meta}</p>
+              <p className="mt-2 text-sm text-foreground">
+                <span className="font-medium">★ {c.rating}</span>{" "}
+                <span className="text-muted-foreground">{c.reviews}</span>
+              </p>
+              <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent-50 px-2 py-0.5 text-xs font-medium text-accent-700">
+                <ShieldCheck className="h-3 w-3" />
+                Verified · {c.verified}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
