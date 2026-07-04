@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link"; // Next.js's fast-navigation version of <a>
 import { ShieldCheck, Menu, X } from "lucide-react";
 
+import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +16,21 @@ const NAV_LINKS = [
   { label: "For employers", href: "/employers" },
 ];
 
+// Extra links that depend on who is logged in (from the
+// session-awareness work) — admin, company owner, or student
+function getRoleLinks(role?: string, isVerified?: boolean) {
+  if (!role) return [];
+  if (role === "admin") return [{ label: "Admin", href: "/admin" }];
+  if (role === "company_owner") return [{ label: "My Company", href: "/company" }];
+  return isVerified
+    ? [{ label: "My Reviews", href: "/dashboard" }]
+    : [{ label: "Dashboard", href: "/dashboard" }];
+}
+
 function Navbar() {
   const [open, setOpen] = React.useState(false); // is the mobile menu open?
+  const { user, isLoading, logout } = useAuth(); // who is signed in right now
+  const roleLinks = getRoleLinks(user?.role, user?.is_verified);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white">
@@ -43,14 +57,35 @@ function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop auth buttons */}
+        {/* Desktop auth area — changes depending on login state */}
         <div className="hidden items-center gap-3 md:flex">
-          <Button asChild variant="ghost">
-            <Link href="/login">Log in</Link>
-          </Button>
-          <Button asChild variant="primary">
-            <Link href="/register">Create account</Link>
-          </Button>
+          {isLoading ? (
+            <span className="text-[14.5px] text-ink-muted">Loading…</span>
+          ) : user ? (
+            <>
+              {roleLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[14.5px] font-semibold text-ink-secondary hover:text-ink"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <Button variant="secondary" size="sm" onClick={() => logout()}>
+                Log out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost">
+                <Link href="/login">Log in</Link>
+              </Button>
+              <Button asChild variant="primary">
+                <Link href="/register">Create account</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Hamburger icon — mobile only */}
@@ -76,13 +111,38 @@ function Navbar() {
             {link.label}
           </Link>
         ))}
-        <Link
-          href="/register"
-          className="mt-2 rounded-control bg-primary px-2 py-2.5 text-center font-display text-[15px] font-medium text-white"
-          onClick={() => setOpen(false)}
-        >
-          Create account
-        </Link>
+        {user ? (
+          <>
+            {roleLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-control px-2 py-2.5 text-[14.5px] font-semibold text-ink-secondary hover:bg-paper"
+                onClick={() => setOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <button
+              type="button"
+              className="mt-2 rounded-control border border-border px-2 py-2.5 text-center font-display text-[15px] font-medium text-ink"
+              onClick={() => {
+                setOpen(false);
+                logout();
+              }}
+            >
+              Log out
+            </button>
+          </>
+        ) : (
+          <Link
+            href="/register"
+            className="mt-2 rounded-control bg-primary px-2 py-2.5 text-center font-display text-[15px] font-medium text-white"
+            onClick={() => setOpen(false)}
+          >
+            Create account
+          </Link>
+        )}
       </nav>
     </header>
   );
