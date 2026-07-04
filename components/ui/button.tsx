@@ -1,23 +1,31 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "@radix-ui/react-slot"; // lets the button "become" another element, like a Link
+import { cva, type VariantProps } from "class-variance-authority"; // manages multiple style variants
+import { Loader2 } from "lucide-react"; // spinning loading icon
+
 import { cn } from "@/lib/utils";
 
+// Defines the button looks: Primary (solid green), Secondary (white
+// with a border), Ghost (no background, green text only), and Link
+// (text-link style, used by the navbar and homepage).
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  // classes applied to every button no matter the variant
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control " +
+    "font-display font-medium text-[15px] transition-colors focus-visible:outline-none " +
+    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
+    "disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700",
-        secondary:
-          "border border-border bg-white text-foreground hover:bg-muted active:bg-muted",
-        ghost: "text-foreground hover:bg-muted",
-        link: "text-accent-600 hover:text-accent-700 h-auto p-0",
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90",  // solid green
+        secondary: "bg-white border border-border text-ink hover:bg-paper", // outlined
+        ghost: "text-primary hover:bg-primary-tint",                        // text only
+        link: "text-primary hover:text-primary-deep h-auto p-0",            // looks like a link
       },
       size: {
-        sm: "h-8 px-3",
-        md: "h-9 px-4",
-        lg: "h-10 px-6",
+        sm: "h-8 px-3 text-sm",
+        md: "px-6 py-3", // the default size from the Figma design
+        lg: "h-12 px-8",
       },
     },
     defaultVariants: {
@@ -30,18 +38,26 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+  asChild?: boolean; // if true, renders as the child element (e.g. a Link) instead of <button>
+  loading?: boolean; // if true, shows a spinner and disables clicking
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    { className, variant, size, asChild = false, loading = false, disabled, children, ...props },
+    ref
+  ) => {
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        disabled={disabled || loading}
         {...props}
-      />
+      >
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />} {/* spinner only shows while loading */}
+        {children}
+      </Comp>
     );
   }
 );

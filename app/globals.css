@@ -1,44 +1,54 @@
+/* Loads Tailwind's base styles, components, and utility classes */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* This is where the ACTUAL color values live. tailwind.config.ts only
+   refers to names like --primary — this file says what --primary
+   really is. To change a color everywhere, edit ONLY this file. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 155 70% 32%;          
+    /* Colors written as Hue Saturation Lightness numbers, no "hsl()"
+       wrapper, so tailwind.config.ts can combine them as hsl(var(--x)) */
+    --background: 0 0% 100%;   /* white */
+    --paper: 120 8% 97%;        /* very light gray, for input backgrounds */
+
+    --foreground: 152 12% 13%;  /* main dark text color */
+    --ink: 152 12% 13%;
+    --ink-secondary: 140 7% 35%;
+    --ink-muted: 132 6% 61%;
+    --border: 132 12% 90%;      /* light gray line color */
+    --input: 132 12% 90%;
+
+    /* The single green accent color, used for anything "primary" or "verified" */
+    --primary: 158 68% 30%;
+    --primary-deep: 160 71% 22%;
+    --primary-tint: 150 38% 93%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 20% 96%;
-    --accent-foreground: 222 47% 11%;
-    --success: 142 71% 30%;
-    --success-foreground: 0 0% 100%;
-    --warning: 32 95% 44%;
-    --warning-foreground: 0 0% 100%;
-    --destructive: 0 72% 45%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 155 70% 32%;             
-    --radius: 0.625rem;
+    --ring: 158 68% 30%;        /* focus glow uses the same green */
+
+    /* Amber, only for "pending" status */
+    --pending: 39 74% 34%;
+    --pending-tint: 42 55% 90%;
+
+    /* Red, only for "rejected"/error states */
+    --danger: 4 48% 47%;
+    --danger-tint: 5 50% 94%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 152 12% 13%;
   }
 }
 
+/* Default styles for the whole page */
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border; /* every border uses our gray by default */
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans; /* white bg, dark text, body font */
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+  h1, h2, h3, h4 {
+    @apply font-display; /* headings use the heading font */
   }
 }
