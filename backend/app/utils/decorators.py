@@ -17,3 +17,15 @@ def _get_current_user():
     cursor.execute("SELECT id, role, is_verified FROM users WHERE id = %s", (payload["sub"],))
     return cursor.fetchone()
 
+def role_required(*roles):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorated(*args, **kwargs):
+            user = _get_current_user()
+            if user is None:
+                return jsonify(error="not logged in"), 401
+            if user["role"] not in roles:
+                return jsonify(error="forbidden"), 403
+            return fn(*args, **kwargs)
+        return decorated
+    return wrapper
