@@ -163,4 +163,52 @@ export default function CompanyProfilePage({
           </Button>
         </div>
       </header>
-      
+      {/* --- about --- */}
+      {company.description && (
+        <section className="space-y-3">
+          <h2 className="text-card-title text-ink">About</h2>
+          <p className="max-w-3xl text-body text-ink-secondary">{company.description}</p>
+        </section>
+      )}
+
+      {/* --- open internships --- */}
+      <section className="space-y-4">
+        <h2 className="text-card-title text-ink">Open internships</h2>
+        {company.internships.length === 0 ? (
+          <p className="text-body text-ink-muted">
+            No open internships posted right now.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {company.internships.map((role) => (
+              <div
+                key={role.id}
+                className="rounded-card border border-border bg-white p-lg shadow-soft"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-chip bg-primary-tint">
+                    <Briefcase className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-card-title text-ink">{role.title}</h3>
+                    {role.location && (
+                      <p className="text-sm text-ink-secondary">{role.location}</p>
+                    )}
+                  </div>
+                </div>
+                {role.description && (
+                  <p className="mt-3 line-clamp-3 text-body text-ink-secondary">
+                    {role.description}
+                  </p>
+                )}
+                {role.deadline && (
+                  <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-ink-muted">
+                    <CalendarClock className="h-4 w-4" />
+                    Apply by {formatDate(role.deadline)}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
