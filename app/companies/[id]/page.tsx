@@ -212,3 +212,88 @@ export default function CompanyProfilePage({
           </div>
         )}
       </section>
+       {/* --- reviews --- */}
+      <section className="space-y-4">
+        <h2 className="text-card-title text-ink">
+          Reviews {hasReviews && <span className="text-ink-muted">({company.review_count})</span>}
+        </h2>
+
+        {!hasReviews ? (
+          <EmptyState
+            title="No reviews yet"
+            description="Be the first verified intern to review this company."
+            action={
+              <Button asChild variant="secondary" size="sm">
+                <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-4">
+            {company.reviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+// --- one review, matching the schema: overall rating + 4 category scores ---
+const CATEGORIES: { key: keyof Review; label: string }[] = [
+  { key: "mentorship", label: "Mentorship" },
+  { key: "tasks", label: "Tasks" },
+  { key: "learning", label: "Learning" },
+  { key: "environment", label: "Environment" },
+];
+
+function ReviewCard({ review }: { review: Review }) {
+  return (
+    <article className="rounded-card border border-border bg-white p-lg shadow-soft">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-paper font-display text-sm font-semibold text-ink">
+            {review.reviewer_name.slice(0, 1).toUpperCase()}
+          </div>
+          <div>
+            <p className="flex items-center gap-2 text-card-title text-ink">
+              {review.reviewer_name}
+              {review.reviewer_verified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-badge text-primary">
+                  <ShieldCheck className="h-3 w-3" />
+                  Verified
+                </span>
+              )}
+            </p>
+            <p className="text-sm text-ink-muted">{formatDate(review.created_at)}</p>
+          </div>
+        </div>
+        <StarRating value={review.rating} readOnly showValue />
+      </div>
+
+      {review.comment && (
+        <p className="mt-4 text-body text-ink-secondary">{review.comment}</p>
+      )}
+
+      {/* the four category scores */}
+      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+        {CATEGORIES.map((cat) => (
+          <div key={cat.key} className="space-y-1">
+            <p className="text-sm text-ink-muted">{cat.label}</p>
+            <StarRating value={review[cat.key] as number} readOnly size="sm" />
+          </div>
+        ))}
+      </div>
+
+      {/* owner's reply, if any */}
+      {review.reply && (
+        <div className="mt-4 rounded-chip border-l-2 border-primary bg-paper p-4">
+          <p className="text-label text-ink">Response from the company</p>
+          <p className="mt-1 text-body text-ink-secondary">{review.reply.body}</p>
+          <p className="mt-1 text-sm text-ink-muted">{formatDate(review.reply.created_at)}</p>
+        </div>
+      )}
+    </article>
+  );
+}
