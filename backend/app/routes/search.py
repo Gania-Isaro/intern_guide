@@ -13,3 +13,27 @@ def list_companies():
     if search:
         query += " AND name LIKE %s"
         params.append(f"%{search}%")
+    industry = request.args.get("industry")
+    if industry:
+        query += " AND industry = %s"
+        params.append(industry)
+    location = request.args.get("location")
+    if location:
+        query += " AND location = %s"
+        params.append(location) 
+
+    query += " ORDER BY name ASC"
+    cursor.execute(query, params)
+    companies = cursor.fetchall()
+    for c in companies:
+        c["average_rating"] = float(c["average_rating"]) if c["average_rating"] is not None else None
+    return jsonify(results=companies)
+
+@bp.get("/<int:company_id>")
+def get_company(company_id):
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id, name, industry, location, website, description, average_rating "
+        "FROM companies WHERE id = %s",
+        (company_id,),
+    )
