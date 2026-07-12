@@ -37,3 +37,9 @@ def get_company(company_id):
         "FROM companies WHERE id = %s",
         (company_id,),
     )
+
+    company = cursor.fetchone()
+    if company is None:
+        return jsonify(error="company not found"), 404
+    company["average_rating"] = float(company["average_rating"]) if company["average_rating"] is not None else None
+    return jsonify(company) 
