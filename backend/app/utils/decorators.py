@@ -29,3 +29,14 @@ def role_required(*roles):
             return fn(*args, **kwargs)
         return decorated
     return wrapper
+
+def verified_required(fn):
+    @wraps(fn)
+    def decorated(*args, **kwargs):
+        user = _get_current_user()
+        if user is None:
+            return jsonify(error="not logged in"), 401
+        if not user["is_verified"]:
+            return jsonify(error="account not verified"), 403
+        return fn(*args, **kwargs)
+    return decorated
