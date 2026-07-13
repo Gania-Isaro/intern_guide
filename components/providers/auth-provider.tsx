@@ -5,11 +5,12 @@ import { apiFetch } from "@/lib/utils";
 
 export type UserRole = "student" | "company_owner" | "admin";
 
-export interface AuthUser {
-  user_id: number;
-  email: string;
-  role: UserRole;
-  is_verified: boolean;
+export interface AuthUser {  
+  id: number;  
+  name: string;  
+  email: string;  
+  role: UserRole;  
+  is_verified: boolean; 
 }
 
 interface AuthContextValue {
@@ -25,11 +26,12 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 );
 
 const MOCK_AUTH = process.env.NEXT_PUBLIC_MOCK_AUTH === "true";
-const MOCK_USER: AuthUser = {
-  user_id: 1,
-  email: "aline.m@alustudent.com",
-  role: "student",
-  is_verified: true,
+const MOCK_USER: AuthUser = {  
+  id: 1,  
+  name: "Aline Mukamana",  
+  email: "aline.m@alustudent.com",  
+  role: "student",  
+  is_verified: true, 
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
