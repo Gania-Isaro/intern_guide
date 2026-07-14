@@ -13,9 +13,6 @@ import {
   CardContent,
   CardFooter,
   Badge,
-  VerifiedBadge,
-  PendingBadge,
-  RejectedBadge,
   Dialog,
   DialogTrigger,
   DialogContent,
@@ -79,16 +76,14 @@ export default function DesignSystemPage() {
         <div className="flex flex-wrap items-center gap-md">
           <Button>Default</Button>
           <Button variant="secondary">Secondary</Button>
-          <Button variant="outline">Outline</Button>
           <Button variant="ghost">Ghost</Button>
-          <Button variant="destructive">Destructive</Button>
           <Button variant="link">Link</Button>
           <Button loading>Saving…</Button>
           <Button disabled>Disabled</Button>
         </div>
         <div className="mt-md flex flex-wrap items-center gap-md">
           <Button size="sm">Small</Button>
-          <Button size="default">Default</Button>
+          <Button size="md">Default</Button>
           <Button size="lg">Large</Button>
         </div>
       </Section>
@@ -96,12 +91,9 @@ export default function DesignSystemPage() {
       {/* ---- Status badges ---- */}
       <Section title="Badge (review / verification status)">
         <div className="flex flex-wrap items-center gap-md">
-          <VerifiedBadge />
-          <PendingBadge />
-          <RejectedBadge />
-          <Badge variant="default">Default</Badge>
-          <Badge variant="secondary">Secondary</Badge>
-          <Badge variant="outline">Outline</Badge>
+          <Badge status="verified" />
+          <Badge status="pending" />
+          <Badge status="rejected" />
         </div>
       </Section>
 
@@ -140,7 +132,7 @@ export default function DesignSystemPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Kigali Tech Ltd</CardTitle>
-              <VerifiedBadge />
+              <Badge status="verified" />
             </div>
             <CardDescription>Software · Kigali</CardDescription>
           </CardHeader>
@@ -160,7 +152,7 @@ export default function DesignSystemPage() {
       <Section title="Dialog / Modal">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">Open review dialog</Button>
+            <Button variant="secondary">Open review dialog</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
