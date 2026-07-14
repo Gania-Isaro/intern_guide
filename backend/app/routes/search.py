@@ -119,4 +119,37 @@ def get_company(company_id):
         (company_id,),
     )
     
+    internships = cursor.fetchall()
+    for role in internships:
+        role["deadline"] = role["deadline"].isoformat() if role["deadline"] else None
+        role["is_active"] = bool(role["is_active"])  # Convert to boolean for JSON response
+
+    cursor .execute(
+        "SELECT r.id, r.rating, r.mentorship, r.tasks, r.learning, r.environment, "
+        "r.comment, r.created_at, u.name AS reviewer_name, "
+        "u.is_verified AS reviewer_verified "
+        "FROM reviews r JOIN users u ON u.id = r.user_id "
+        "WHERE r.company_id = %s AND r.status = 'approved' "
+        "ORDER BY r.created_at DESC",
+        (company_id,),
+    )
+    reviews = cursor.fetchall()
+    for review in reviews:
+        review["rating"] = float(review["rating"])
+        review["reviewer_verified"] = bool(review["reviewer_verified"])  # Convert to boolean for JSON response
+        review["created_at"] = review["created_at"].isoformat()  # Convert to ISO format for JSON response
+        cursor.execute(
+            "SELECT body, created_at FROM replies WHERE review_id = %s "
+            "ORDER BY created_at ASC LIMIT 1",
+            (review["id"],),
+        )
+        reply = cursor.fetchone()
+        review["reply"] = (
+            {"body": reply["body"], "created_at": reply["created_at"].isoformat()}
+            if reply
+            else None
+        )
     
+    company["internships"] = internships
+    company["reviews"] = reviews
+    return jsonify(company)
