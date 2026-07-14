@@ -34,5 +34,26 @@ def _int_arg(name, default, minimum, maximum=None):
     return value
 
 @bp.get("")
+def list_companies():
+# Store filters and SQL parameters
+    where = ["1=1"]
+    params = []
 
+    # Filter companies by search search name 
+    search = request.args.get("search")
+    if search:
+        where.append("c.name LIKE %s")
+        params.append(f"%{search}%")
 
+    # Filter companies by industry
+    industry = request.args.get("industry")
+    if industry:
+        where.append("c.industry = %s")
+        params.append(industry)
+
+    # Filter companies by location
+    location = request.args.get("location")
+    if location:
+        where.append("c.location = %s")
+        params.append(location)
+        
