@@ -19,7 +19,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "recent intern",
+    role: "student",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -43,7 +43,12 @@ async function handleSubmit(e: React.FormEvent) {
     }
 
      setIsSubmitting(true);
-    const result = await apiPost("/auth/register", formData);
+    const result = await apiPost("/auth/register", {
+      name: formData.fullName.trim(),
+      email: formData.email,
+      password: formData.password,
+      role: formData.role
+    });
     setIsSubmitting(false);
 
 
@@ -52,7 +57,7 @@ async function handleSubmit(e: React.FormEvent) {
       return;
     }
 
-    router.push("/");
+    router.push("/login");
   }
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
