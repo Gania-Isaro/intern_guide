@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const AUTH_COOKIE_NAME = "access_token";
+const AUTH_COOKIE_NAME = "token";
 
 const PROTECTED_PATHS = ["/dashboard", "/admin", "/company"];
 
