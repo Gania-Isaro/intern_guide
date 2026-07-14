@@ -4,3 +4,4 @@ mysql-connector-python
 pyjwt
 python-dotenv
 pytest
+gunicorn
