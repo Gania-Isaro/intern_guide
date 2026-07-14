@@ -56,4 +56,36 @@ def list_companies():
     if location:
         where.append("c.location = %s")
         params.append(location)
-        
+
+
+    # Get sorting and pagination  values
+    sort = request.args.get("sort", "rating")
+    if sort not in SORTS:
+        sort = "rating" 
+    page = _int_arg("page", default=1, minimum=1)
+    per_page = _int_arg("per_page", default=12, minimum=1, maximum=50)
+
+    where_sql = " AND ".join(where)
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute(f"SELECT COUNT(*) AS total FROM companies c WHERE {where_sql}", params)
+    total = cursor.fetchone()["total"]
+    total_pages = ceil(total / per_page) if total else 0    
+
+    cursor.execute(
+        f"SELECT {COMPANY_FIELDS} FROM companies c WHERE {where_sql} "
+        f"ORDER BY {SORTS[sort]} LIMIT %s OFFSET %s",
+        params + [per_page, (page - 1) * per_page],
+    )
+    companies = cursor.fetchall()
+    for c in companies:
+        c["average_rating"] = float(c["average_rating"]) if c["average_rating"] is not None else None   
+
+    return jsonify(
+        companies=companies,
+        page=page,
+        per_page=per_page,
+        total=total,
+        total_pages=total_pages,
+        sort=sort,
+    )
