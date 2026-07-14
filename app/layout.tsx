@@ -2,7 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { Navbar } from "@/components/layout/navbar";
+import { Poppins, Nunito_Sans } from "next/font/google";
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
+
+const nunitoSans = Nunito_Sans({
+  subsets: ["latin"],
+  variable: "--font-nunito-sans",
+});
 export const metadata: Metadata = {
   title: "InternGuide",
   description: "Verified internship reviews for students in Rwanda.",
@@ -14,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${poppins.variable} ${nunitoSans.variable}`}>
       <body className="font-sans antialiased">
         <AuthProvider>
           <Navbar />
