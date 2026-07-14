@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiPost } from "@/lib/api";
 import { validateLoginForm } from "@/lib/validation";
+import { useAuth } from "@/components/providers/auth-provider";
+  
 
 function inputClass(hasError: boolean) {
  const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
@@ -14,7 +16,7 @@ function inputClass(hasError: boolean) {
 
 export default function LoginPage() {
   const router = useRouter();
-
+  const { refetch } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -49,6 +51,7 @@ export default function LoginPage() {
       return;
     }
 
+    await refetch(); // reload /auth/me so the navbar shows the user immediately
     router.push("/");
   }
 
