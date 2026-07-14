@@ -1,3 +1,17 @@
+# HOW TO USE (every protected route MUST do this):
+#
+#   from ..utils.decorators import role_required, verified_required
+#
+#   @bp.get("/admin/pending-reviews")
+#   @role_required("admin")            # only admins get in
+#   def pending_reviews():
+#       ...
+#
+#   @bp.post("/reviews")
+#   @verified_required                 # only verified students get in
+#   def create_review():
+#       ...
+
 from functools import wraps
 import jwt
 from flask import current_app, jsonify, request
