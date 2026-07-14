@@ -108,7 +108,7 @@ def get_company(company_id):
 
     # return error if company not found
     if company is None:
-        return jsonify(error="Company not found"), 404
+        return jsonify(error="company not found"), 404
     company["average_rating"] = (float(company["average_rating"]) if company["average_rating"] is not None else None)   
 
 # Get active internships for the company
