@@ -113,18 +113,21 @@ def get_company(company_id):
 
 # Get active internships for the company
     cursor.execute(
-        "SELECT id, title, description, location, deadline, is_active"
+        "SELECT id, title, description, location, deadline, is_active "
         "FROM internships WHERE company_id = %s AND is_active = TRUE "
         "ORDER BY created_at DESC",
         (company_id,),
     )
     
     internships = cursor.fetchall()
+
+    # formatting internship dates and status values
     for role in internships:
         role["deadline"] = role["deadline"].isoformat() if role["deadline"] else None
         role["is_active"] = bool(role["is_active"])  # Convert to boolean for JSON response
 
-    cursor .execute(
+    #Get approved reviews for reviewr information 
+    cursor.execute(
         "SELECT r.id, r.rating, r.mentorship, r.tasks, r.learning, r.environment, "
         "r.comment, r.created_at, u.name AS reviewer_name, "
         "u.is_verified AS reviewer_verified "
@@ -134,6 +137,8 @@ def get_company(company_id):
         (company_id,),
     )
     reviews = cursor.fetchall()
+
+    #Format review data and add company replies
     for review in reviews:
         review["rating"] = float(review["rating"])
         review["reviewer_verified"] = bool(review["reviewer_verified"])  # Convert to boolean for JSON response
@@ -150,6 +155,7 @@ def get_company(company_id):
             else None
         )
     
+    # ADd internships and reviews to company response
     company["internships"] = internships
     company["reviews"] = reviews
     return jsonify(company)
