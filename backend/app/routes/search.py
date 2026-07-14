@@ -68,16 +68,20 @@ def list_companies():
     where_sql = " AND ".join(where)
     cursor = get_db().cursor(dictionary=True)
 
+# Counting total companies for pagination
     cursor.execute(f"SELECT COUNT(*) AS total FROM companies c WHERE {where_sql}", params)
     total = cursor.fetchone()["total"]
     total_pages = ceil(total / per_page) if total else 0    
 
+# Get companies for the current  page
     cursor.execute(
         f"SELECT {COMPANY_FIELDS} FROM companies c WHERE {where_sql} "
         f"ORDER BY {SORTS[sort]} LIMIT %s OFFSET %s",
         params + [per_page, (page - 1) * per_page],
     )
     companies = cursor.fetchall()
+
+    # Convert ratings to numbers for JSON response
     for c in companies:
         c["average_rating"] = float(c["average_rating"]) if c["average_rating"] is not None else None   
 
@@ -89,3 +93,30 @@ def list_companies():
         total_pages=total_pages,
         sort=sort,
     )
+
+@bp.get("/<int:company_id>")
+def get_company(company_id):
+    cursor = get_db().cursor(dictionary=True)
+
+    # get company details
+    cursor.execute(
+        f"SELECT {COMPANY_FIELDS}, c.website, c.description "
+        "FROM companies c WHERE c.id = %s",
+        (company_id,),
+    )
+    company = cursor.fetchone()
+
+    # return error if company not found
+    if company is None:
+        return jsonify(error="Company not found"), 404
+    company["average_rating"] = (float(company["average_rating"]) if company["average_rating"] is not None else None)   
+
+# Get active internships for the company
+    cursor.execute(
+        "SELECT id, title, description, location, deadline, is_active"
+        "FROM internships WHERE company_id = %s AND is_active = TRUE "
+        "ORDER BY created_at DESC",
+        (company_id,),
+    )
+    
+    
