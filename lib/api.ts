@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 type ApiResult =
   | { ok: true; data: unknown }
@@ -21,7 +21,7 @@ export async function apiPost(
     const data = await response.json();
 
     if (!response.ok) {
-      return { ok: false, error: data.message || "Something went wrong. Please try again." };
+      return { ok: false, error: data.error || data.message || "Something went wrong. Please try again." };
     }
 
     return { ok: true, data };
