@@ -36,4 +36,31 @@ def upload_proof():
     file.seek(0)
     if file_size > MAX_FILE_SIZE:
         return jsonify(error="File size exceeds limit of 5MB"), 400
+
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
+    if cursor.fetchone() is None:
+        return jsonify(error="company not found"), 404
     
+    cursor.execute(
+        "SELECT id FROM verification_proofs WHERE user_id = %s AND status = 'pending'",
+        (user["id"],),
+    )
+    if cursor.fetchone() is not None:
+        return jsonify(error="you already have a pending verification proof"), 409
+    
+    folder = _upload_folder()
+    os.makedirs(folder, exist_ok=True)
+    stored_name = safe_filename(file.filename)
+    file.save(os.path.join(folder, stored_name))
+
+    cursor.execute(
+        "INSERT INTO verification_proofs (user_id, company_id, file_path) VALUES (%s, %s, %s)", (user["id"], company_id, os.path.join("uploads", "proofs", stored_name)),
+    )
+    get_db().commit()
+
+    return (jsonify(
+        status = "pending",
+        message = "Your verification proof has been submitted and is pending review."
+    ), 201)
