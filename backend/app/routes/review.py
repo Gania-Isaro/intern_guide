@@ -1,6 +1,6 @@
 from flask import Blueprint, g, jsonify, request
 
-form ..db import get_db
+from ..db import get_db
 from ..services.rating import compute_overall
 from ..utils.decorators import verified_required
 
