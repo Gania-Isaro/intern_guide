@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 type ApiResult =
   | { ok: true; data: unknown }
@@ -21,7 +21,59 @@ export async function apiPost(
     const data = await response.json();
 
     if (!response.ok) {
-      return { ok: false, error: data.message || "Something went wrong. Please try again." };
+      return { ok: false, error: data.error || data.message || "Something went wrong. Please try again." };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again later." };
+  }
+}
+export async function apiGet(
+  endpoint: string,
+  params: Record<string, string | number | undefined> = {}
+): Promise<ApiResult> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    // skip empty filters so the URL stays clean (?search=&industry= -> nothing)
+    if (value !== undefined && value !== "") {
+      query.set(key, String(value));
+    }
+  }
+  const qs = query.toString();
+  const url = `${API_URL}${endpoint}${qs ? `?${qs}` : ""}`;
+
+  try {
+    const response = await fetch(url, { credentials: "include" });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { ok: false, error: data.error || "Something went wrong. Please try again." };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again later." };
+  }
+}
+
+// For file uploads (the proof of placement). FormData sets its own
+// Content-Type with the multipart boundary, so we must NOT set one here.
+export async function apiUpload(
+  endpoint: string,
+  formData: FormData
+): Promise<ApiResult> {
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { ok: false, error: data.error || "Something went wrong. Please try again." };
     }
 
     return { ok: true, data };
