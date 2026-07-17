@@ -13,8 +13,7 @@ import { FileUp } from "lucide-react";
 import { apiGet, apiUpload } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
-import { LoadingState } from "@/components/ui/states";
-import { Card } from "@/components/ui/card";
+import { LoadingState } from "@/components/shared/loading-state";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // must match the backend's limit
 const ALLOWED_TYPES = [".pdf", ".png", ".jpg", ".jpeg"];
@@ -45,7 +44,7 @@ export default function VerifyPage() {
   }, []);
 
   // ---------- who is asking? ----------
-  if (isLoading) return <LoadingState label="Checking your account…" />;
+  if (isLoading) return <LoadingState label="Checking your account…"/>;
 
   if (!user) {
     return (
@@ -213,6 +212,17 @@ export default function VerifyPage() {
           Send for verification
         </Button>
       </form>
+    </div>
+  );
+}
+// small shared card so every message on this page looks the same
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-lg py-10">
+      <div className="flex flex-col items-start gap-3 rounded-card border border-border bg-white p-lg shadow-soft">
+        <h1 className="font-display text-card-title text-ink">{title}</h1>
+        {children}
+      </div>
     </div>
   );
 }

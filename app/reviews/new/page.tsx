@@ -13,7 +13,8 @@ import { validateReviewForm, type ReviewScores } from "@/lib/validation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
-import { EmptyState, LoadingState } from "@/components/ui/states";
+import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
 
 // what each category means, in the student's words
 const CATEGORIES: { key: keyof ReviewScores; label: string; hint: string }[] = [
@@ -247,7 +248,7 @@ function NewReviewForm() {
 // useSearchParams needs a Suspense boundary in the App Router
 export default function NewReviewPage() {
   return (
-    <React.Suspense fallback={<LoadingState label="Loading…" />}>
+    <React.Suspense fallback={<LoadingState/>}>
       <NewReviewForm />
     </React.Suspense>
   );
