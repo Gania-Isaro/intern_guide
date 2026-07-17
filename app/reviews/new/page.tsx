@@ -1,7 +1,5 @@
 "use client";
 
-// Write a review (D4) with verification gating (D6).
-//
 // The page reads ?company=ID from the URL (the profile page links here),
 // checks WHO you are before showing anything, and only lets a verified
 // student fill in the four star categories and send.
@@ -24,6 +22,7 @@ const CATEGORIES: { key: keyof ReviewScores; label: string; hint: string }[] = [
   { key: "learning", label: "Learning", hint: "How much did you grow during the placement?" },
   { key: "environment", label: "Environment", hint: "Was the workplace welcoming and respectful?" },
 ];
+
 // a friendly card used by every "you can't review yet" situation
 function GateCard({
   title,
@@ -51,7 +50,30 @@ function GateCard({
   );
 }
 
-apiGet(`/companies/${companyId}`);
+function NewReviewForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const companyId = Number(searchParams.get("company"));
+
+  const { user, isLoading } = useAuth();
+
+  const [companyName, setCompanyName] = React.useState<string | null>(null);
+  const [scores, setScores] = React.useState<ReviewScores>({
+    mentorship: 0,
+    tasks: 0,
+    learning: 0,
+    environment: 0,
+  });
+  const [comment, setComment] = React.useState("");
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // look up the company's name so the page can say who you're reviewing
+  React.useEffect(() => {
+    if (!companyId) return;
+    (async () => {
+      const result = await apiGet(`/companies/${companyId}`);
       if (result.ok) {
         setCompanyName((result.data as { name: string }).name);
       }
@@ -89,30 +111,7 @@ apiGet(`/companies/${companyId}`);
         buttonText="Upload proof of placement"
         buttonHref="/verify"
       />
-    );function NewReviewForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const companyId = Number(searchParams.get("company"));
-
-  const { user, isLoading } = useAuth();
-
-  const [companyName, setCompanyName] = React.useState<string | null>(null);
-  const [scores, setScores] = React.useState<ReviewScores>({
-    mentorship: 0,
-    tasks: 0,
-    learning: 0,
-    environment: 0,
-  });
-  const [comment, setComment] = React.useState("");
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  // look up the company's name so the page can say who you're reviewing
-  React.useEffect(() => {
-    if (!companyId) return;
-    (async () => {
-      const result = await 
+    );
   }
 
   if (!companyId) {
@@ -242,5 +241,14 @@ apiGet(`/companies/${companyId}`);
         </div>
       </form>
     </div>
+  );
+}
+
+// useSearchParams needs a Suspense boundary in the App Router
+export default function NewReviewPage() {
+  return (
+    <React.Suspense fallback={<LoadingState label="Loading…" />}>
+      <NewReviewForm />
+    </React.Suspense>
   );
 }
