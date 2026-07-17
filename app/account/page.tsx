@@ -1,5 +1,7 @@
 "use client";
+import Link from "next/link";
 import { useAuth } from "@/components/providers/auth-provider";
+import { Button } from "@/components/ui/button";
 
 export default function AccountPage() {
   const { user, isLoading } = useAuth();
@@ -19,6 +21,19 @@ export default function AccountPage() {
           {user.is_verified ? "Verified intern" : "Not yet verified"}
         </p>
       </div>
+
+      {user.role === "student" && (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/my-reviews">My reviews</Link>
+          </Button>
+          {!user.is_verified && (
+            <Button asChild variant="primary" size="sm">
+              <Link href="/verify">Verify my placement</Link>
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
