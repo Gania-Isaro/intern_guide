@@ -74,3 +74,4 @@ def test_safe_filename_is_unique_every_time():
 
 
 def test_max_file_size_is_5_mb():
+    assert MAX_FILE_SIZE == 5 * 1024 * 1024
