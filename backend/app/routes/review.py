@@ -1,16 +1,23 @@
+# Reviews: submit one (D1, Wilson), read a company's approved ones (D7)
+# and read your own with their status (D8).
+#
+# The blueprint has no url_prefix because the routes live on different
+# paths (/reviews and /me/reviews), so each one spells out its full path.
+
 from flask import Blueprint, g, jsonify, request
 
 from ..db import get_db
 from ..services.rating import compute_overall
-from ..utils.decorators import verified_required
+from ..utils.decorators import role_required, verified_required
 
 bp = Blueprint("review", __name__)
 
-# endpoints: submit review, list approved reviews, my reviews
-CATEGORIES = ["mentorship", "tasks", "learning", "environment"]
+# the four things a student scores, 1-5 stars each
+CATEGORIES = ("mentorship", "tasks", "learning", "environment")
+
 
 @bp.post("/reviews")
-@verified_required
+@verified_required  # only students whose placement was verified can review
 def create_review():
     data = request.get_json(silent=True) or {}
 
@@ -63,9 +70,75 @@ def create_review():
     )
     get_db().commit()
 
-    return jsonify(
-        id=cursor.lastrowid,
-        rating=rating,
-        status="pending",
-        message="Review submitted, an admin will review it before it is published.",
-    ), 201
+    return (
+        jsonify(
+            id=cursor.lastrowid,
+            rating=rating,
+            status="pending",
+            message="review submitted — an admin will check it before it goes live",
+        ),
+        201,
+    )
+
+
+# ---------- D7: read a company's approved reviews ----------
+
+@bp.get("/reviews")
+def list_reviews():
+    """Approved reviews for one company, newest first.
+
+    Usage: GET /reviews?company_id=1
+    Pending and rejected reviews never appear here.
+    """
+    company_id = request.args.get("company_id", type=int)
+    if company_id is None:
+        return jsonify(error="company_id is required"), 400
+
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
+    if cursor.fetchone() is None:
+        return jsonify(error="company not found"), 404
+
+    cursor.execute(
+        "SELECT r.id, r.rating, r.mentorship, r.tasks, r.learning, r.environment,"
+        " r.comment, r.created_at, u.name AS reviewer_name,"
+        " u.is_verified AS reviewer_verified"
+        " FROM reviews r JOIN users u ON u.id = r.user_id"
+        " WHERE r.company_id = %s AND r.status = 'approved'"
+        " ORDER BY r.created_at DESC",
+        (company_id,),
+    )
+    reviews = cursor.fetchall()
+
+    # make every value JSON-friendly
+    for review in reviews:
+        review["rating"] = float(review["rating"])
+        review["reviewer_verified"] = bool(review["reviewer_verified"])
+        review["created_at"] = review["created_at"].isoformat()
+
+    return jsonify(reviews=reviews, total=len(reviews))
+
+
+# ---------- D8: the logged-in student's own reviews ----------
+
+@bp.get("/me/reviews")
+@role_required("student")
+def my_reviews():
+    """Everything I have submitted, with its status (pending/approved/rejected)."""
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT r.id, r.rating, r.mentorship, r.tasks, r.learning, r.environment,"
+        " r.comment, r.status, r.created_at, c.name AS company_name, c.id AS company_id"
+        " FROM reviews r JOIN companies c ON c.id = r.company_id"
+        " WHERE r.user_id = %s"
+        " ORDER BY r.created_at DESC",
+        (g.current_user["id"],),
+    )
+    reviews = cursor.fetchall()
+
+    for review in reviews:
+        review["rating"] = float(review["rating"])
+        review["created_at"] = review["created_at"].isoformat()
+
+    return jsonify(reviews=reviews)
