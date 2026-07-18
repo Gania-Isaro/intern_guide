@@ -51,6 +51,8 @@ def verified_required(fn):
         user = _get_current_user()
         if user is None:
             return jsonify(error="not logged in"), 401
+        if user["role"] != "student":
+            return jsonify(error="only students can write reviews"), 403
         if not user["is_verified"]:
             return jsonify(error="account not verified"), 403
         g.current_user = user
