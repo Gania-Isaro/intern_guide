@@ -15,14 +15,14 @@ def create_review():
     data = request.get_json(silent=True) or {}
 
     company_id = data.get("company_id")
-    if not isinstance(company_id, int):
+    if type(company_id) is not int:
         return jsonify(error="company_id is required"), 400
     
     # every category must be present and an integer between 1 and 5
     scores = {}
     for name in CATEGORIES:
         value = data.get(name)
-        if not isinstance(value, int) or not (1 <= value <= 5):
+        if type(value) is not int or not (1 <= value <= 5):
             return jsonify(error=f"{name} must be a whole number between 1 and 5"), 400
         scores[name] = value
 
