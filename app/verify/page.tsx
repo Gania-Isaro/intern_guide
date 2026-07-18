@@ -13,7 +13,7 @@ import { FileUp } from "lucide-react";
 import { apiGet, apiUpload } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
-import { LoadingState } from "@/components/shared/loading-state";
+import { LoadingState } from "@/components/ui/states";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // must match the backend's limit
 const ALLOWED_TYPES = [".pdf", ".png", ".jpg", ".jpeg"];

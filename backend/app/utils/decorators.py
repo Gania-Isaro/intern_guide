@@ -1,6 +1,20 @@
+# HOW TO USE (every protected route MUST do this):
+#
+#   from ..utils.decorators import role_required, verified_required
+#
+#   @bp.get("/admin/pending-reviews")
+#   @role_required("admin")            # only admins get in
+#   def pending_reviews():
+#       ...
+#
+#   @bp.post("/reviews")
+#   @verified_required                 # only verified students get in
+#   def create_review():
+#       ...
+
 from functools import wraps
 import jwt
-from flask import current_app, jsonify, request
+from flask import current_app, g, jsonify, request
 from ..db import get_db
 
 COOKIE_NAME = "token"
@@ -26,6 +40,7 @@ def role_required(*roles):
                 return jsonify(error="not logged in"), 401
             if user["role"] not in roles:
                 return jsonify(error="forbidden"), 403
+            g.current_user = user
             return fn(*args, **kwargs)
         return decorated
     return wrapper
@@ -38,5 +53,6 @@ def verified_required(fn):
             return jsonify(error="not logged in"), 401
         if not user["is_verified"]:
             return jsonify(error="account not verified"), 403
+        g.current_user = user
         return fn(*args, **kwargs)
     return decorated

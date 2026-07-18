@@ -163,6 +163,17 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+      <section className="rounded-lg bg-accent-50 px-6 py-14 text-center">
+  <h2 className="text-2xl font-bold text-foreground">
+    Just finished your internship?
+  </h2>
+  <p className="mt-2 text-sm text-muted-foreground">
+    Help the next intern choose well a verified review takes five minutes.
+  </p>
+  <Button variant="primary" className="mt-6">
+    Write a verified review
+  </Button>
+</section>
     </div>
   );
 }
