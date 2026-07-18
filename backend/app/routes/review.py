@@ -22,18 +22,18 @@ def create_review():
     data = request.get_json(silent=True) or {}
 
     company_id = data.get("company_id")
-    if not isinstance(company_id, int):
+    if type(company_id) is not int:
         return jsonify(error="company_id is required"), 400
-
-    # every category must be a whole number from 1 to 5
+    
+    # every category must be present and an integer between 1 and 5
     scores = {}
     for name in CATEGORIES:
         value = data.get(name)
-        if not isinstance(value, int) or not 1 <= value <= 5:
-            return jsonify(error=f"{name} must be a whole number from 1 to 5"), 400
+        if type(value) is not int or not (1 <= value <= 5):
+            return jsonify(error=f"{name} must be a whole number between 1 and 5"), 400
         scores[name] = value
 
-    # the comment is optional; an empty string counts as no comment
+    # comment is optional
     comment = (data.get("comment") or "").strip() or None
 
     cursor = get_db().cursor(dictionary=True)
@@ -41,20 +41,18 @@ def create_review():
     cursor.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
     if cursor.fetchone() is None:
         return jsonify(error="company not found"), 404
-
-    # one review per student per company (the DB also enforces this)
+    
+    # one review per user per company
     cursor.execute(
         "SELECT id FROM reviews WHERE user_id = %s AND company_id = %s",
-        (g.current_user["id"], company_id),
+        (g.current_user["id"], company_id)
     )
     if cursor.fetchone() is not None:
-        return jsonify(error="you have already reviewed this company"), 409
-
-    # the overall rating is the average of the four category scores
+        return jsonify(error="you have already submitted a review for this company"), 409
+    
+    # average rating is computed from the four categories
     rating = compute_overall(scores)
 
-    # status is not set here — the table defaults it to 'pending', and only
-    # an admin can move it to approved or rejected
     cursor.execute(
         "INSERT INTO reviews"
         " (company_id, user_id, mentorship, tasks, learning, environment, rating, comment)"
@@ -67,7 +65,7 @@ def create_review():
             scores["learning"],
             scores["environment"],
             rating,
-            comment,
+            comment
         ),
     )
     get_db().commit()
