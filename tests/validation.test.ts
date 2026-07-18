@@ -10,7 +10,7 @@ import {
     validatePassword,
     validateRegisterForm,
     validateReviewForm,
-} from "../src/lib/validation";
+} from "../lib/validation";
 
 describe("email", () => {
     it("accepts a normal address", () => {
