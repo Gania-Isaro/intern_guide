@@ -71,3 +71,24 @@ export function validateLoginForm(formData: { email: string; password: string })
 
   return errors;
 }
+
+export interface ReviewScores {
+  mentorship: number;
+  tasks: number;
+  learning: number;
+  environment: number;
+}
+
+// Every category needs a star rating before the form can be sent.
+// A score of 0 means "not chosen yet".
+export function validateReviewForm(scores: ReviewScores) {
+  const errors: Record<string, string> = {};
+
+  for (const [name, value] of Object.entries(scores)) {
+    if (!Number.isInteger(value) || value < 1 || value > 5) {
+      errors[name] = "Pick a rating from 1 to 5 stars";
+    }
+  }
+
+  return errors;
+}
