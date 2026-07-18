@@ -60,7 +60,7 @@ def upload_proof():
     file.save(os.path.join(folder, stored_name))
 
     cursor.execute(
-        "INSERT INTO verification_proofs (user_id, company_id, file_path) VALUES (%s, %s, %s)", (user["id"], company_id, os.path.join("uploads", "proofs", stored_name)),
+        "INSERT INTO verification_proofs (user_id, company_id, file_path) VALUES (%s, %s, %s)", (user["id"], company_id, f"uploads/proofs/{stored_name}"),
     )
     get_db().commit()
 
