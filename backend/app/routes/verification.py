@@ -10,7 +10,11 @@ bp = Blueprint("verification", __name__, url_prefix="/verification-proofs")
 # endpoints: upload proof of placement, check proof status
 
 def _upload_folder():
-    return os.path.join(current_app.root_path, "..", "uploads", "proofs")
+    upload_root = current_app.config.get("UPLOAD_ROOT") or os.getenv("UPLOAD_ROOT")
+    if upload_root:
+        return os.path.join(upload_root, "proofs")
+
+    return os.path.abspath(os.path.join(current_app.root_path, "..", "uploads", "proofs"))
 
 @bp.post("")
 @role_required("student")
