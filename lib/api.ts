@@ -56,3 +56,28 @@ export async function apiGet(
     return { ok: false, error: "Could not reach the server. Please try again later." };
   }
 }
+
+// For file uploads (the proof of placement). FormData sets its own
+// Content-Type with the multipart boundary, so we must NOT set one here.
+export async function apiUpload(
+  endpoint: string,
+  formData: FormData
+): Promise<ApiResult> {
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { ok: false, error: data.error || "Something went wrong. Please try again." };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again later." };
+  }
+}

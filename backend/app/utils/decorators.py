@@ -14,7 +14,7 @@
 
 from functools import wraps
 import jwt
-from flask import current_app, jsonify, request
+from flask import current_app, g, jsonify, request
 from ..db import get_db
 
 COOKIE_NAME = "token"
@@ -40,6 +40,7 @@ def role_required(*roles):
                 return jsonify(error="not logged in"), 401
             if user["role"] not in roles:
                 return jsonify(error="forbidden"), 403
+            g.current_user = user
             return fn(*args, **kwargs)
         return decorated
     return wrapper
@@ -50,7 +51,10 @@ def verified_required(fn):
         user = _get_current_user()
         if user is None:
             return jsonify(error="not logged in"), 401
+        if user["role"] != "student":
+            return jsonify(error="only students can write reviews"), 403
         if not user["is_verified"]:
             return jsonify(error="account not verified"), 403
+        g.current_user = user
         return fn(*args, **kwargs)
     return decorated
