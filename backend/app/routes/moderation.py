@@ -120,3 +120,16 @@ def _decide_proof(proof_id, new_status):
         )
     db.commit()
     return jsonify(id=proof_id, status=new_status)
+
+
+@bp.post("/proofs/<int:proof_id>/approve")
+@role_required("admin")
+def approve_proof(proof_id):
+    """Approve a proof of placement."""
+    return _decide_proof(proof_id, "approved")
+
+@bp.post("/proofs/<int:proof_id>/reject")
+@role_required("admin")
+def reject_proof(proof_id):
+    """Reject a proof of placement."""
+    return _decide_proof(proof_id, "rejected")
