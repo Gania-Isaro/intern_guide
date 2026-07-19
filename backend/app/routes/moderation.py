@@ -74,3 +74,49 @@ def _decide_review(review_id, new_status):
 
     recompute_company_average(review["company_id"])
     return jsonify(id=review_id, status=new_status)
+
+
+@bp.post("/reviews/<int:review_id>/approve")
+@role_required("admin")
+def approve_review(review_id):
+    """Approve a review."""
+    return _decide_review(review_id, "approved")
+
+
+@bp.post("/reviews/<int:review_id>/reject")
+@role_required("admin")
+def reject_review(review_id):
+    """Reject a review."""
+    return _decide_review(review_id, "rejected")
+
+def _delete_proof_file(file_path):
+    """Delete a proof file from the server."""
+    if not file_path:
+        return
+    full_path = os.path.join(_upload_folder(), os.path.basename(file_path))
+    if os.path.exists(full_path):
+        os.remove(full_path)
+
+
+def _decide_proof(proof_id, new_status):
+    """Approve or reject a proof, and delete the file if rejected."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id, user_id, file_path FROM verification_proofs WHERE id = %s AND status = 'pending'", (proof_id,),
+    )
+    proof = cursor.fetchone()
+    if proof is None:
+        return jsonify(error="pending proof not found"), 404
+    
+    _delete_proof_file(proof["file_path"])
+
+    cursor.execute(
+        "UPDATE verification_proofs SET status = %s, file_path = NULL WHERE id = %s", (new_status, proof_id)
+    )
+    if new_status == "approved":
+        cursor.execute(
+            "UPDATE users SET is_verified = TRUE WHERE id = %s", (proof["user_id"],)
+        )
+    db.commit()
+    return jsonify(id=proof_id, status=new_status)
