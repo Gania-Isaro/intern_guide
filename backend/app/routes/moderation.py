@@ -66,7 +66,6 @@ def _decide_review(review_id, new_status):
     review = cursor.fetchone()
     if review is None:
         return jsonify(error="pending review not found"), 404
-    
     cursor.execute(
         "UPDATE reviews SET status = %s WHERE id = %s", (new_status, review_id)
     )
@@ -99,7 +98,7 @@ def _delete_proof_file(file_path):
 
 
 def _decide_proof(proof_id, new_status):
-    """Approve or reject a proof, and delete the file if rejected."""
+    """Approve or reject a proof. The uploaded file is deleted either way(privacy)"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     cursor.execute(
