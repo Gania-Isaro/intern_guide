@@ -32,3 +32,25 @@ def pending_reviews():
         review["rating"] = float(review["rating"])
         review["created_at"] = review["created_at"].isoformat()
     return jsonify(reviews=reviews, total=len(reviews))
+
+@bp.get("/proofs")
+@role_required("admin")
+def pending_proofs():
+    """Every proof of placement waiting for a decision, oldest first."""
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT p.id, p.file_path, p.created_at,"
+        " u.id AS student_id, u.name AS student_name, u.email AS student_email,"
+        " c.name AS company_name"
+        " FROM verification_proofs p"
+        " JOIN users u ON u.id = p.user_id"
+        " JOIN companies c ON c.id = p.company_id"
+        " WHERE p.status = 'pending'"
+        " ORDER BY p.created_at ASC"
+    )
+    proofs = cursor.fetchall()
+    for proof in proofs:
+        proof["created_at"] = proof["created_at"].isoformat()
+        # the admin sees just the stored filename, not a server path
+        proof["file_name"] = os.path.basename(proof.pop("file_path") or "")
+    return jsonify(proofs=proofs, total=len(proofs))
