@@ -54,3 +54,23 @@ def pending_proofs():
         # the admin sees just the stored filename, not a server path
         proof["file_name"] = os.path.basename(proof.pop("file_path") or "")
     return jsonify(proofs=proofs, total=len(proofs))
+
+
+def _decide_review(review_id, new_status):
+    """Approve or reject a review, and recompute the company's average rating."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT company_id FROM reviews WHERE id = %s AND status = 'pending'", (review_id,),
+    )
+    review = cursor.fetchone()
+    if review is None:
+        return jsonify(error="pending review not found"), 404
+    
+    cursor.execute(
+        "UPDATE reviews SET status = %s WHERE id = %s", (new_status, review_id)
+    )
+    db.commit()
+
+    recompute_company_average(review["company_id"])
+    return jsonify(id=review_id, status=new_status)
