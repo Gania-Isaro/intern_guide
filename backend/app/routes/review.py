@@ -143,6 +143,7 @@ def my_reviews():
 
     return jsonify(reviews=reviews)
 
+
 # ---------- F3: a company owner replies to a review ----------
 
 @bp.post("/reviews/<int:review_id>/reply")
