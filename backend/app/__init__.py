@@ -3,7 +3,7 @@ from flask_cors import CORS
 
 from .config import Config
 from .db import close_db
-from .routes import auth, moderation, rating, review, search, verification
+from .routes import auth, manage, moderation, rating, review, search, verification
 
 
 def create_app():
@@ -18,7 +18,7 @@ def create_app():
     def health():
         return jsonify(status="ok")
 
-    for service in (auth, search, review, rating, verification, moderation):
+    for service in (auth, manage, search, review, rating, verification, moderation):
         app.register_blueprint(service.bp)
 
     return app
