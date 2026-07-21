@@ -109,3 +109,78 @@ def edit_company(company_id):
     get_db().commit()
 
     return jsonify(id=company_id, message="company updated")
+
+# Return all dashboard data for the company owner.
+@bp.get("/me/company")
+@role_required("company_owner")
+def my_company():
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT id, name, description, industry, location, website, average_rating"
+        " FROM companies WHERE owner_id = %s",
+        (g.current_user["id"],),
+    )
+
+    company = cursor.fetchone()
+
+    if company is None:
+        return jsonify(error="no company is linked to your account yet"), 404
+
+    company["average_rating"] = (
+        float(company["average_rating"])
+        if company["average_rating"] is not None
+        else None
+    )
+
+    # Get internships.
+    cursor.execute(
+        "SELECT id, title, description, location, deadline, is_active"
+        " FROM internships WHERE company_id = %s ORDER BY created_at DESC",
+        (company["id"],),
+    )
+
+    internships = cursor.fetchall()
+
+    for role in internships:
+        role["deadline"] = role["deadline"].isoformat() if role["deadline"] else None
+        role["is_active"] = bool(role["is_active"])
+
+    # Get approved reviews.
+    cursor.execute(
+        "SELECT r.id, r.rating, r.comment, r.created_at, u.name AS reviewer_name"
+        " FROM reviews r JOIN users u ON u.id = r.user_id"
+        " WHERE r.company_id = %s AND r.status = 'approved'"
+        " ORDER BY r.created_at DESC",
+        (company["id"],),
+    )
+
+    reviews = cursor.fetchall()
+
+    for review in reviews:
+        review["rating"] = float(review["rating"])
+        review["created_at"] = review["created_at"].isoformat()
+
+        # Get the first reply if it exists.
+        cursor.execute(
+            "SELECT body, created_at FROM replies WHERE review_id = %s"
+            " ORDER BY created_at ASC LIMIT 1",
+            (review["id"],),
+        )
+
+        reply = cursor.fetchone()
+
+        review["reply"] = (
+            {
+                "body": reply["body"],
+                "created_at": reply["created_at"].isoformat(),
+            }
+            if reply
+            else None
+        )
+
+    return jsonify(
+        company=company,
+        internships=internships,
+        reviews=reviews,
+    )
