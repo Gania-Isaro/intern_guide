@@ -239,3 +239,35 @@ def post_internship(company_id):
     get_db().commit()
 
     return jsonify(id=cursor.lastrowid, message="internship posted"), 201
+
+# Open or close an internship.
+@bp.post("/internships/<int:internship_id>/toggle")
+@role_required("company_owner")
+def toggle_internship(internship_id):
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT i.id, i.is_active, c.owner_id FROM internships i"
+        " JOIN companies c ON c.id = i.company_id WHERE i.id = %s",
+        (internship_id,),
+    )
+
+    internship = cursor.fetchone()
+
+    if internship is None:
+        return jsonify(error="internship not found"), 404
+
+    # Only the owner can change the internship status.
+    if internship["owner_id"] != g.current_user["id"]:
+        return jsonify(error="you can only manage your own internships"), 403
+
+    new_state = not internship["is_active"]
+
+    cursor.execute(
+        "UPDATE internships SET is_active = %s WHERE id = %s",
+        (new_state, internship_id),
+    )
+
+    get_db().commit()
+
+    return jsonify(id=internship_id, is_active=new_state)
