@@ -184,3 +184,58 @@ def my_company():
         internships=internships,
         reviews=reviews,
     )
+
+
+# Company owner posts a new internship.
+@bp.post("/companies/<int:company_id>/internships")
+@role_required("company_owner")
+def post_internship(company_id):
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT id, owner_id FROM companies WHERE id = %s",
+        (company_id,),
+    )
+
+    company = cursor.fetchone()
+
+    if company is None:
+        return jsonify(error="company not found"), 404
+
+    if company["owner_id"] != g.current_user["id"]:
+        return jsonify(error="you can only post internships for your own company"), 403
+
+    data = request.get_json(silent=True) or {}
+
+    title = (data.get("title") or "").strip()
+
+    # Internship title is required.
+    if not title:
+        return jsonify(error="title is required"), 400
+
+    deadline = (data.get("deadline") or "").strip() or None
+
+    # Check if the deadline format is valid.
+    if deadline:
+        try:
+            date.fromisoformat(deadline)
+        except ValueError:
+            return jsonify(
+                error="deadline must be a date like 2026-09-01"
+            ), 400
+
+    cursor.execute(
+        "INSERT INTO internships (company_id, title, description, location, deadline)"
+        " VALUES (%s, %s, %s, %s, %s)",
+        (
+            company_id,
+            title,
+            (data.get("description") or "").strip() or None,
+            (data.get("location") or "").strip() or None,
+            deadline,
+        ),
+    )
+
+    get_db().commit()
+
+    return jsonify(id=cursor.lastrowid, message="internship posted"), 201
