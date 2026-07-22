@@ -149,6 +149,111 @@ def create_company():
 
     return jsonify(id=company_id, message="company created"), 201
 
+# ---------- owners register their own business (H1) ----------
+
+# An owner fills this in themselves. The company is saved as 'pending' and
+# stays out of search until an admin approves it, so nobody can put a made-up
+# employer on the site and start collecting reviews for it.
+@bp.post("/companies/register")
+@role_required("company_owner")
+def register_company():
+    data = request.get_json(silent=True) or {}
+    fields = _clean_company_fields(data)
+
+    if not fields.get("name"):
+        return jsonify(error="name is required"), 400
+
+    problem = _field_problem(fields)
+    if problem:
+        return jsonify(error=problem), 400
+
+    cursor = get_db().cursor(dictionary=True)
+
+    # one business per owner account, which keeps /me/company unambiguous
+    cursor.execute(
+        "SELECT id FROM companies WHERE owner_id = %s", (g.current_user["id"],)
+    )
+    if cursor.fetchone() is not None:
+        return jsonify(error="your account already has a company"), 409
+
+    cursor.execute("SELECT id FROM companies WHERE name = %s", (fields["name"],))
+    if cursor.fetchone() is not None:
+        return jsonify(error="a company with this name already exists"), 409
+
+    cursor.execute(
+        "INSERT INTO companies"
+        " (owner_id, name, description, industry, location, website,"
+        "  google_address, size, founded_year, status)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')",
+        (
+            g.current_user["id"],
+            fields.get("name"),
+            fields.get("description"),
+            fields.get("industry"),
+            fields.get("location"),
+            fields.get("website"),
+            fields.get("google_address"),
+            fields.get("size"),
+            fields.get("founded_year"),
+        ),
+    )
+    company_id = cursor.lastrowid
+    _save_amenities(cursor, company_id, data.get("amenities") or [])
+
+    get_db().commit()
+
+    return (
+        jsonify(
+            id=company_id,
+            status="pending",
+            message="thanks — an admin will check your business before it goes live",
+        ),
+        201,
+    )
+
+# ---------- the admin decides on registered businesses (H2) ----------
+
+@bp.get("/admin/companies")
+@role_required("admin")
+def pending_companies():
+    """Businesses waiting for a decision, oldest first."""
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT c.id, c.name, c.description, c.industry, c.location, c.website,"
+        " c.google_address, c.size, c.founded_year, c.created_at,"
+        " u.name AS owner_name, u.email AS owner_email"
+        " FROM companies c JOIN users u ON u.id = c.owner_id"
+        " WHERE c.status = 'pending' ORDER BY c.created_at ASC"
+    )
+    companies = cursor.fetchall()
+    for company in companies:
+        company["created_at"] = company["created_at"].isoformat()
+        company["amenities"] = _amenities_of(cursor, company["id"])
+    return jsonify(companies=companies, total=len(companies))
+
+
+def _decide_company(company_id, new_status):
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id FROM companies WHERE id = %s AND status = 'pending'",
+        (company_id,),
+    )
+    if cursor.fetchone() is None:
+        return jsonify(error="pending company not found"), 404
+
+    cursor.execute(
+        "UPDATE companies SET status = %s WHERE id = %s", (new_status, company_id)
+    )
+    get_db().commit()
+    return jsonify(id=company_id, status=new_status)
+
+
+@bp.post("/admin/companies/<int:company_id>/approve")
+@role_required("admin")
+def approve_company(company_id):
+    return _decide_company(company_id, "approved")
+
+
 
 # Admin can edit any company.
 # Owners can only edit their own company.
