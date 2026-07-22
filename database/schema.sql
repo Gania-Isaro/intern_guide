@@ -53,14 +53,29 @@ CREATE TABLE company_amenities (
 );
 
 CREATE TABLE internships (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  company_id  INT NOT NULL,
-  title       VARCHAR(150) NOT NULL,
-  description TEXT,
-  location    VARCHAR(150),
-  deadline    DATE,
-  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  company_id      INT NOT NULL,
+  title           VARCHAR(150) NOT NULL,
+  description     TEXT,
+  location        VARCHAR(150),
+  deadline        DATE,
+  is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+  -- Pay lives on the posting, not on the company: the same employer can run a
+  -- paid engineering internship and an unpaid marketing one at the same time.
+  -- 'intern_pays' covers programmes the student is charged for.
+  compensation    ENUM('paid', 'stipend', 'unpaid', 'academic_credit', 'intern_pays')
+                    NOT NULL DEFAULT 'unpaid',
+  stipend_amount  DECIMAL(10,2),
+  stipend_currency CHAR(3) NOT NULL DEFAULT 'RWF',
+  stipend_period  ENUM('hour', 'week', 'month', 'total'),
+  work_mode       ENUM('onsite', 'hybrid', 'remote') NOT NULL DEFAULT 'onsite',
+  schedule        ENUM('full_time', 'part_time', 'flexible') NOT NULL DEFAULT 'full_time',
+  duration_months TINYINT,
+  start_date      DATE,
+  openings        SMALLINT NOT NULL DEFAULT 1,
+  -- broad area of work, e.g. Engineering, Design, Finance. Used by the filters.
+  field           VARCHAR(60),
+  created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
