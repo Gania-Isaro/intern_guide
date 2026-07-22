@@ -17,7 +17,7 @@ CATEGORIES = ("mentorship", "tasks", "learning", "environment")
 
 # Two optional questions at the bottom of the review form. They are only ever
 # shown added up on the company's charts, and the charts hide themselves when
-# too few people answered, so one reviewer can never be picked out.
+# too few people answered, one reviewer can never be picked out.
 GENDERS = ("female", "male", "other", "prefer_not_to_say")
 
 
