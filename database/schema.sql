@@ -92,6 +92,11 @@ CREATE TABLE reviews (
   rating      DECIMAL(2,1) NOT NULL,
   comment     TEXT,
   status      ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  -- Optional, and only ever shown added up. Both questions are skippable on the
+  -- review form, and the charts hide themselves when too few people answered,
+  -- so a single reviewer can never be picked out of a graph.
+  gender      ENUM('female', 'male', 'other', 'prefer_not_to_say'),
+  intern_year SMALLINT,
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
