@@ -142,3 +142,44 @@ def my_reviews():
         review["created_at"] = review["created_at"].isoformat()
 
     return jsonify(reviews=reviews)
+
+
+# ---------- F3: a company owner replies to a review ----------
+
+@bp.post("/reviews/<int:review_id>/reply")
+@role_required("company_owner")
+def reply_to_review(review_id):
+    """One public reply per review, written by the company's owner.
+
+    Owners only see (and answer) APPROVED reviews - pending and rejected
+    ones don't exist for them. The reply appears on the company page
+    right under the review.
+    """
+    body = ((request.get_json(silent=True) or {}).get("body") or "").strip()
+    if not body:
+        return jsonify(error="reply text is required"), 400
+
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT r.id, c.owner_id FROM reviews r"
+        " JOIN companies c ON c.id = r.company_id"
+        " WHERE r.id = %s AND r.status = 'approved'",
+        (review_id,),
+    )
+    review = cursor.fetchone()
+    if review is None:
+        return jsonify(error="review not found"), 404
+    if review["owner_id"] != g.current_user["id"]:
+        return jsonify(error="you can only reply to reviews of your own company"), 403
+
+    # one reply per review - a conversation belongs in person, not here
+    cursor.execute("SELECT id FROM replies WHERE review_id = %s", (review_id,))
+    if cursor.fetchone() is not None:
+        return jsonify(error="this review already has a reply"), 409
+
+    cursor.execute(
+        "INSERT INTO replies (review_id, user_id, body) VALUES (%s, %s, %s)",
+        (review_id, g.current_user["id"], body),
+    )
+    get_db().commit()
+    return jsonify(id=cursor.lastrowid, review_id=review_id, body=body), 201
