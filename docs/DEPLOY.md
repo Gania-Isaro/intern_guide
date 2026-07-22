@@ -30,7 +30,9 @@ the `backend/` directory.
 
 ## 3. Frontend (Next.js)
 
-1. Import the repo into Vercel, set the root to the repository root.
+1. Import the repo into Vercel and set the **Root Directory** to
+   `frontend` (Vercel → Project → Settings → General → Root Directory).
+   The Next.js app lives there, not at the repository root.
 2. Set one environment variable:
    - `NEXT_PUBLIC_API_URL` = the deployed API URL (no trailing slash)
 3. Deploy. Vercel runs `npm run build` on its own.

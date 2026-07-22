@@ -10,6 +10,18 @@ reviews go public after admin approval. Built by **team THE GRID** (ALU).
 - **Backend:** Flask (Python) + MySQL, JWT cookie sessions
 - **Tests:** pytest (backend) and Vitest (frontend)
 
+## Repo layout
+
+```
+frontend/   Next.js app (pages, components, tests, package.json)
+backend/    Flask API (app, tests, requirements.txt)
+database/   schema.sql and seed.sql
+docs/       deployment and technical docs
+```
+
+Each side owns its own dependencies and config — run `npm` commands from
+`frontend/`, and Python commands from `backend/`.
+
 ## Run it locally
 
 You need: Node 20+, Python 3.12+, MySQL 8+.
@@ -37,6 +49,7 @@ Check it: `curl http://localhost:5001/health` → `{"status":"ok"}`.
 ### 3. Frontend (Next.js on port 3000)
 
 ```bash
+cd frontend
 npm install
 echo "NEXT_PUBLIC_API_URL=http://localhost:5001" > .env.local
 npm run dev
@@ -56,8 +69,8 @@ Open http://localhost:3000.
 ## Tests
 
 ```bash
-cd backend && .venv/bin/python -m pytest -q   # backend suite
-npm test                                       # frontend suite
+cd backend   && .venv/bin/python -m pytest -q   # backend suite
+cd frontend  && npm test                        # frontend suite
 ```
 
 ## How the trust model works
