@@ -34,6 +34,26 @@ export default function AccountPage() {
           )}
         </div>
       )}
+
+      {/* each role gets its own front door (sprint 4) */}
+      {user.role === "admin" && (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin">Moderation queue</Link>
+          </Button>
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/admin/companies">Manage companies</Link>
+          </Button>
+        </div>
+      )}
+
+      {user.role === "company_owner" && (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/owner">My company dashboard</Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
