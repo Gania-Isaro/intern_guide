@@ -9,6 +9,9 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorState, LoadingState } from "@/components/ui/states";
+import { AMENITY_LABELS, labelFor } from "@/lib/labels";
+
+const SIZES = ["1-10", "11-50", "51-200", "200+"];
 
 interface MyCompany {
   company: {
@@ -18,6 +21,10 @@ interface MyCompany {
     industry: string | null;
     location: string | null;
     website: string | null;
+    google_address: string | null;
+    size: string | null;
+    founded_year: number | null;
+    amenities: string[];
   };
 }
 
@@ -32,7 +39,12 @@ export default function EditCompanyPage() {
     location: "",
     website: "",
     description: "",
+    google_address: "",
+    size: "",
+    founded_year: "",
   });
+  // the perks ticked on this page, sent to the API as a list of codes
+  const [amenities, setAmenities] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
@@ -51,7 +63,11 @@ export default function EditCompanyPage() {
         location: company.location ?? "",
         website: company.website ?? "",
         description: company.description ?? "",
+        google_address: company.google_address ?? "",
+        size: company.size ?? "",
+        founded_year: company.founded_year ? String(company.founded_year) : "",
       });
+      setAmenities(company.amenities ?? []);
     } else {
       setError(result.error);
     }
@@ -86,7 +102,10 @@ export default function EditCompanyPage() {
     }
     setSaving(true);
     setMessage(null);
-    const result = await apiPost(`/companies/${companyId}/edit`, form);
+    const result = await apiPost(`/companies/${companyId}/edit`, {
+      ...form,
+      amenities,
+    });
     if (result.ok) {
       router.push("/owner"); // back to the dashboard, which reloads fresh data
     } else {
@@ -131,6 +150,80 @@ export default function EditCompanyPage() {
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
         />
+
+        {/* Anything Google Maps can find works, because that is literally what
+            we hand it. Search your business on Google Maps and copy the
+            address it shows. */}
+        <Input
+          id="google_address"
+          label="Address on Google Maps"
+          value={form.google_address}
+          onChange={(e) => setForm({ ...form, google_address: e.target.value })}
+          placeholder="KG 7 Ave, Kigali, Rwanda"
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="size" className="text-label text-ink-secondary">
+              Company size
+            </label>
+            <select
+              id="size"
+              value={form.size}
+              onChange={(e) => setForm({ ...form, size: e.target.value })}
+              className="rounded-input border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+            >
+              <option value="">Not saying</option>
+              {SIZES.map((size) => (
+                <option key={size} value={size}>
+                  {size} people
+                </option>
+              ))}
+            </select>
+          </div>
+          <Input
+            id="founded_year"
+            label="Founded in"
+            type="number"
+            value={form.founded_year}
+            onChange={(e) => setForm({ ...form, founded_year: e.target.value })}
+            placeholder="2018"
+          />
+        </div>
+
+        {/* What students filter on. Only tick what you really provide - these
+            show as tags on your public page. */}
+        <fieldset className="space-y-2">
+          <legend className="text-label text-ink-secondary">
+            What you offer interns
+          </legend>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {Object.keys(AMENITY_LABELS).map((code) => {
+              const isOn = amenities.includes(code);
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  aria-pressed={isOn}
+                  onClick={() =>
+                    setAmenities(
+                      isOn
+                        ? amenities.filter((item) => item !== code)
+                        : [...amenities, code]
+                    )
+                  }
+                  className={
+                    isOn
+                      ? "rounded-chip border border-primary bg-primary-tint px-3 py-1.5 text-sm text-primary-deep"
+                      : "rounded-chip border border-border bg-white px-3 py-1.5 text-sm text-ink-secondary hover:border-primary"
+                  }
+                >
+                  {labelFor(AMENITY_LABELS, code)}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="description" className="text-label text-ink-secondary">
             Description
