@@ -57,9 +57,26 @@ def _clean_company_fields(data):
     cleaned = {}
     for field in COMPANY_FIELDS:
         if field in data:
-            value = (data.get(field) or "").strip()
-            cleaned[field] = value or None
+            if field == "founded_year":
+                # comes off a number input, so it may arrive as "" or as an int
+                value = data.get(field)
+                cleaned[field] = int(value) if str(value).strip().isdigit() else None
+            else:
+                value = (data.get(field) or "").strip()
+                cleaned[field] = value or None
     return cleaned
+
+
+def _field_problem(fields):
+    """The message to send back when a value is not allowed, else None."""
+    if fields.get("size") and fields["size"] not in SIZES:
+        return "size must be one of: " + ", ".join(SIZES)
+    year = fields.get("founded_year")
+    if year is not None and not (1900 <= year <= 2100):
+        return "founded year must be a real year"
+    return None
+
+
 
 # Admin creates a new company.
 @bp.post("/companies")
