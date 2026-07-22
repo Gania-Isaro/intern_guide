@@ -477,6 +477,41 @@ def post_internship(company_id):
             return jsonify(error="start date must be a date like 2026-09-01"), 400
 
 
+    cursor.execute(
+        "INSERT INTO internships"
+        " (company_id, title, description, location, deadline, compensation,"
+        "  stipend_amount, stipend_period, work_mode, schedule, duration_months,"
+        "  start_date, openings, field)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (
+            company_id,
+            title,
+            (data.get("description") or "").strip() or None,
+            (data.get("location") or "").strip() or None,
+            deadline,
+            compensation,
+            _positive_number(data.get("stipend_amount")),
+            stipend_period,
+            work_mode,
+            schedule,
+            _positive_number(data.get("duration_months")),
+            start_date,
+            _positive_number(data.get("openings")) or 1,
+            (data.get("field") or "").strip() or None,
+        ),
+    )
+
+    get_db().commit()
+
+    return jsonify(id=cursor.lastrowid, message="internship posted"), 201
+
+# Open or close an internship.
+@bp.post("/internships/<int:internship_id>/toggle")
+@role_required("company_owner")
+def toggle_internship(internship_id):
+    cursor = get_db().cursor(dictionary=True)
+
+
 # Admin can edit any company.
 # Owners can only edit their own company.
 @bp.post("/companies/<int:company_id>/edit")
