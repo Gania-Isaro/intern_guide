@@ -121,21 +121,34 @@ def create_company():
     if cursor.fetchone() is not None:
         return jsonify(error="a company with this name already exists"), 409
 
+    problem = _field_problem(fields)
+    if problem:
+        return jsonify(error=problem), 400
+
+    # An admin adding a company is the check, so it goes live immediately.
     cursor.execute(
-        "INSERT INTO companies (name, description, industry, location, website)"
-        " VALUES (%s, %s, %s, %s, %s)",
+        "INSERT INTO companies"
+        " (name, description, industry, location, website, google_address,"
+        "  size, founded_year, status)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'approved')",
         (
             fields.get("name"),
             fields.get("description"),
             fields.get("industry"),
             fields.get("location"),
             fields.get("website"),
+            fields.get("google_address"),
+            fields.get("size"),
+            fields.get("founded_year"),
         ),
     )
+    company_id = cursor.lastrowid
+    _save_amenities(cursor, company_id, data.get("amenities") or [])
 
     get_db().commit()
 
-    return jsonify(id=cursor.lastrowid, message="company created"), 201
+    return jsonify(id=company_id, message="company created"), 201
+
 
 # Admin can edit any company.
 # Owners can only edit their own company.
