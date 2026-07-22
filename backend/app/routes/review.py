@@ -15,6 +15,26 @@ bp = Blueprint("review", __name__)
 # the four things a student scores, 1-5 stars each
 CATEGORIES = ("mentorship", "tasks", "learning", "environment")
 
+# Two optional questions at the bottom of the review form. They are only ever
+# shown added up on the company's charts, and the charts hide themselves when
+# too few people answered, so one reviewer can never be picked out.
+GENDERS = ("female", "male", "other", "prefer_not_to_say")
+
+
+def _optional_gender(value):
+    """Whatever the form sent, or None when it was skipped or unrecognised."""
+    text = (value or "").strip()
+    return text if text in GENDERS else None
+
+
+def _optional_year(value):
+    """The year the student interned, if it is a sensible one."""
+    text = str(value).strip() if value is not None else ""
+    if not text.isdigit():
+        return None
+    year = int(text)
+    return year if 2000 <= year <= 2100 else None
+
 
 @bp.post("/reviews")
 @verified_required  # only students whose placement was verified can review
@@ -55,8 +75,9 @@ def create_review():
 
     cursor.execute(
         "INSERT INTO reviews"
-        " (company_id, user_id, mentorship, tasks, learning, environment, rating, comment)"
-        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        " (company_id, user_id, mentorship, tasks, learning, environment, rating,"
+        "  comment, gender, intern_year)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (
             company_id,
             g.current_user["id"],
@@ -65,7 +86,10 @@ def create_review():
             scores["learning"],
             scores["environment"],
             rating,
-            comment
+            comment,
+            # both skippable: a blank or odd answer is stored as "not said"
+            _optional_gender(data.get("gender")),
+            _optional_year(data.get("intern_year")),
         ),
     )
     get_db().commit()

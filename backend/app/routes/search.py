@@ -33,10 +33,34 @@ def _int_arg(name, default, minimum, maximum=None):
         value = min(maximum, value)
     return value
 
+
+# The filter values a student may send. Anything outside these lists is thrown
+# away instead of reaching the query, so a hand-typed URL cannot break search.
+ALLOWED_FILTERS = {
+    "compensation": ("paid", "stipend", "unpaid", "academic_credit", "intern_pays"),
+    "work_mode": ("onsite", "hybrid", "remote"),
+    "schedule": ("full_time", "part_time", "flexible"),
+}
+
+
+def _list_arg(name, allowed=None):
+    """Read a repeated filter sent as one comma separated value.
+
+    "?work_mode=remote,hybrid" becomes ["remote", "hybrid"].
+    """
+    raw = request.args.get(name)
+    if not raw:
+        return []
+    values = [piece.strip() for piece in raw.split(",") if piece.strip()]
+    if allowed is not None:
+        values = [value for value in values if value in allowed]
+    return values
+
 @bp.get("")
 def list_companies():
 # Store filters and SQL parameters
-    where = ["1=1"]
+    # a business an owner registered is invisible until an admin approves it
+    where = ["c.status = 'approved'"]
     params = []
 
     # Filter companies by search search name 
@@ -57,6 +81,47 @@ def list_companies():
         where.append("c.location = %s")
         params.append(location)
 
+
+    # Only show companies rated at least this well
+    min_rating = request.args.get("min_rating", type=float)
+    if min_rating is not None:
+        where.append("c.average_rating >= %s")
+        params.append(min_rating)
+
+    # Perks are on the company. Asking for two perks means the company must
+    # offer both, which is what a student ticking two boxes expects.
+    for amenity in _list_arg("amenity"):
+        where.append(
+            "EXISTS (SELECT 1 FROM company_amenities a"
+            " WHERE a.company_id = c.id AND a.amenity = %s)"
+        )
+        params.append(amenity)
+
+    # Pay, place and hours live on the internships. A company matches when it
+    # has at least one open posting that fits everything the student asked for,
+    # so the same posting has to satisfy all of these conditions at once.
+    posting_where = ["i.company_id = c.id", "i.is_active = TRUE"]
+    posting_params = []
+
+    for name, allowed in ALLOWED_FILTERS.items():
+        chosen = _list_arg(name, allowed)
+        if chosen:
+            placeholders = ", ".join(["%s"] * len(chosen))
+            posting_where.append(f"i.{name} IN ({placeholders})")
+            posting_params.extend(chosen)
+
+    fields = _list_arg("field")
+    if fields:
+        placeholders = ", ".join(["%s"] * len(fields))
+        posting_where.append(f"i.field IN ({placeholders})")
+        posting_params.extend(fields)
+
+    # only add the subquery when something was actually asked for
+    if len(posting_where) > 2:
+        where.append(
+            "EXISTS (SELECT 1 FROM internships i WHERE " + " AND ".join(posting_where) + ")"
+        )
+        params.extend(posting_params)
 
     # Get sorting and pagination  values
     sort = request.args.get("sort", "rating")
@@ -100,31 +165,48 @@ def get_company(company_id):
 
     # get company details
     cursor.execute(
-        f"SELECT {COMPANY_FIELDS}, c.website, c.description "
-        "FROM companies c WHERE c.id = %s",
+        f"SELECT {COMPANY_FIELDS}, c.website, c.description, c.google_address,"
+        " c.size, c.founded_year "
+        "FROM companies c WHERE c.id = %s AND c.status = 'approved'",
         (company_id,),
     )
     company = cursor.fetchone()
 
-    # return error if company not found
+    # a pending or rejected business has no public profile, so it reads as
+    # missing here rather than telling a stranger that it exists
     if company is None:
         return jsonify(error="company not found"), 404
+
+    # the perks shown as tags on the profile
+    cursor.execute(
+        "SELECT amenity FROM company_amenities WHERE company_id = %s",
+        (company_id,),
+    )
+    company["amenities"] = [row["amenity"] for row in cursor.fetchall()]
     company["average_rating"] = (float(company["average_rating"]) if company["average_rating"] is not None else None)   
 
 # Get active internships for the company
     cursor.execute(
-        "SELECT id, title, description, location, deadline, is_active "
+        "SELECT id, title, description, location, deadline, is_active, "
+        "compensation, stipend_amount, stipend_currency, stipend_period, "
+        "work_mode, schedule, duration_months, start_date, openings, field "
         "FROM internships WHERE company_id = %s AND is_active = TRUE "
         "ORDER BY created_at DESC",
         (company_id,),
     )
-    
+
     internships = cursor.fetchall()
 
     # formatting internship dates and status values
     for role in internships:
         role["deadline"] = role["deadline"].isoformat() if role["deadline"] else None
+        role["start_date"] = (
+            role["start_date"].isoformat() if role["start_date"] else None
+        )
         role["is_active"] = bool(role["is_active"])  # Convert to boolean for JSON response
+        role["stipend_amount"] = (
+            float(role["stipend_amount"]) if role["stipend_amount"] is not None else None
+        )
 
     #Get approved reviews for reviewr information 
     cursor.execute(
