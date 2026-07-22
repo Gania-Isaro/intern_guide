@@ -76,6 +76,27 @@ def _field_problem(fields):
         return "founded year must be a real year"
     return None
 
+def _save_amenities(cursor, company_id, chosen):
+    """Replace the company's perks with the ones ticked on the form.
+
+    Anything not in AMENITIES is dropped rather than rejected, so a stale
+    browser tab can never break someone's save.
+    """
+    cursor.execute("DELETE FROM company_amenities WHERE company_id = %s", (company_id,))
+    wanted = [name for name in AMENITIES if name in set(chosen)]
+    for name in wanted:
+        cursor.execute(
+            "INSERT INTO company_amenities (company_id, amenity) VALUES (%s, %s)",
+            (company_id, name),
+        )
+
+
+def _amenities_of(cursor, company_id):
+    cursor.execute(
+        "SELECT amenity FROM company_amenities WHERE company_id = %s",
+        (company_id,),
+    )
+    return [row["amenity"] for row in cursor.fetchall()]
 
 
 # Admin creates a new company.
