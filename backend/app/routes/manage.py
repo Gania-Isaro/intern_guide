@@ -8,7 +8,48 @@ from ..utils.decorators import role_required
 bp = Blueprint("manage", __name__)
 
 # Fields that users are allowed to edit.
-COMPANY_FIELDS = ("name", "description", "industry", "location", "website")
+COMPANY_FIELDS = (
+    "name",
+    "description",
+    "industry",
+    "location",
+    "website",
+    "google_address",
+    "size",
+    "founded_year",
+)
+
+SIZES = ("1-10", "11-50", "51-200", "200+")
+
+# What a company offers its interns. Kept here rather than in the database so
+# adding a perk is a one-line change; company_amenities just stores the names.
+AMENITIES = (
+    "meals",
+    "transport_allowance",
+    "health_insurance",
+    "laptop_provided",
+    "accommodation",
+    "training_program",
+    "mentorship_program",
+    "certificate",
+    "return_offer",
+    "flexible_hours",
+)
+
+# Pay, place and hours belong to the posting rather than the company: the same
+# employer can run a paid engineering internship and an unpaid marketing one.
+COMPENSATION_TYPES = ("paid", "stipend", "unpaid", "academic_credit", "intern_pays")
+WORK_MODES = ("onsite", "hybrid", "remote")
+SCHEDULES = ("full_time", "part_time", "flexible")
+STIPEND_PERIODS = ("hour", "week", "month", "total")
+
+def _positive_number(value):
+    """A whole number above zero, or None. Empty form fields arrive as ''."""
+    text = str(value).strip() if value is not None else ""
+    if not text.isdigit():
+        return None
+    number = int(text)
+    return number if number > 0 else None
 
 
 def _clean_company_fields(data):
