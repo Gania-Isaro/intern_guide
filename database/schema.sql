@@ -24,10 +24,32 @@ CREATE TABLE companies (
   industry       VARCHAR(100),
   location       VARCHAR(150),
   website        VARCHAR(255),
+  -- the address the owner copies out of Google Maps, e.g. "KG 7 Ave, Kigali".
+  -- the profile page drops it straight into a Google Maps iframe, so anything
+  -- Google can find works. NULL simply means "no map on this profile".
+  google_address VARCHAR(255),
+  -- headcount bracket rather than an exact number, which owners rarely know
+  size           ENUM('1-10', '11-50', '51-200', '200+'),
+  founded_year   SMALLINT,
+  -- a company an owner registered starts as 'pending' and only appears in
+  -- search once an admin approves it. Companies added by an admin skip the
+  -- queue, which is why the default is 'approved'.
+  status         ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved',
   -- kept up to date by the rating engine, stays NULL until the first approved review
   average_rating DECIMAL(2,1),
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- What a company offers its interns: meals, transport money, a laptop, and so
+-- on. One row per perk instead of a column per perk, so adding a new perk is a
+-- Python change and never a schema change. The allowed names live in
+-- backend/app/routes/manage.py (AMENITIES).
+CREATE TABLE company_amenities (
+  company_id INT NOT NULL,
+  amenity    VARCHAR(40) NOT NULL,
+  PRIMARY KEY (company_id, amenity),
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
 CREATE TABLE internships (
