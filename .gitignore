@@ -13,6 +13,9 @@ node_modules/
 # testing
 coverage/
 
+endpoints.md
+testing.md
+
 # next.js
 .next/
 out/
