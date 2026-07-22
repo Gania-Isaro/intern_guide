@@ -322,6 +322,160 @@ def edit_company(company_id):
 
     return jsonify(id=company_id, message="company updated")
 
+# Return all dashboard data for the company owner.
+@bp.get("/me/company")
+@role_required("company_owner")
+def my_company():
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT id, name, description, industry, location, website, google_address,"
+        " size, founded_year, status, average_rating"
+        " FROM companies WHERE owner_id = %s",
+        (g.current_user["id"],),
+    )
+
+    company = cursor.fetchone()
+
+    if company is None:
+        return jsonify(error="no company is linked to your account yet"), 404
+
+    company["average_rating"] = (
+        float(company["average_rating"])
+        if company["average_rating"] is not None
+        else None
+    )
+    company["amenities"] = _amenities_of(cursor, company["id"])
+
+    # Get internships.
+    cursor.execute(
+        "SELECT id, title, description, location, deadline, is_active,"
+        " compensation, stipend_amount, stipend_currency, stipend_period,"
+        " work_mode, schedule, duration_months, start_date, openings, field"
+        " FROM internships WHERE company_id = %s ORDER BY created_at DESC",
+        (company["id"],),
+    )
+
+    internships = cursor.fetchall()
+
+    for role in internships:
+        role["deadline"] = role["deadline"].isoformat() if role["deadline"] else None
+        role["start_date"] = (
+            role["start_date"].isoformat() if role["start_date"] else None
+        )
+        role["is_active"] = bool(role["is_active"])
+        role["stipend_amount"] = (
+            float(role["stipend_amount"]) if role["stipend_amount"] is not None else None
+        )
+
+    # Get approved reviews.
+    cursor.execute(
+        "SELECT r.id, r.rating, r.comment, r.created_at, u.name AS reviewer_name"
+        " FROM reviews r JOIN users u ON u.id = r.user_id"
+        " WHERE r.company_id = %s AND r.status = 'approved'"
+        " ORDER BY r.created_at DESC",
+        (company["id"],),
+    )
+
+    reviews = cursor.fetchall()
+
+    for review in reviews:
+        review["rating"] = float(review["rating"])
+        review["created_at"] = review["created_at"].isoformat()
+
+        # Get the first reply if it exists.
+        cursor.execute(
+            "SELECT body, created_at FROM replies WHERE review_id = %s"
+            " ORDER BY created_at ASC LIMIT 1",
+            (review["id"],),
+        )
+
+        reply = cursor.fetchone()
+
+        review["reply"] = (
+            {
+                "body": reply["body"],
+                "created_at": reply["created_at"].isoformat(),
+            }
+            if reply
+            else None
+        )
+
+    return jsonify(
+        company=company,
+        internships=internships,
+        reviews=reviews,
+    )
+
+
+# Company owner posts a new internship.
+@bp.post("/companies/<int:company_id>/internships")
+@role_required("company_owner")
+def post_internship(company_id):
+    cursor = get_db().cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT id, owner_id FROM companies WHERE id = %s",
+        (company_id,),
+    )
+
+    company = cursor.fetchone()
+
+    if company is None:
+        return jsonify(error="company not found"), 404
+
+    if company["owner_id"] != g.current_user["id"]:
+        return jsonify(error="you can only post internships for your own company"), 403
+
+    data = request.get_json(silent=True) or {}
+
+    title = (data.get("title") or "").strip()
+
+    # Internship title is required.
+    if not title:
+        return jsonify(error="title is required"), 400
+
+    deadline = (data.get("deadline") or "").strip() or None
+
+    # Check if the deadline format is valid.
+    if deadline:
+        try:
+            date.fromisoformat(deadline)
+        except ValueError:
+            return jsonify(
+                error="deadline must be a date like 2026-09-01"
+            ), 400
+
+    # These four decide whether a student even sees the posting in the filters,
+    # so an unrecognised value falls back to the safest honest default rather
+    # than being silently stored.
+    compensation = (data.get("compensation") or "unpaid").strip()
+    if compensation not in COMPENSATION_TYPES:
+        return jsonify(
+            error="compensation must be one of: " + ", ".join(COMPENSATION_TYPES)
+        ), 400
+
+    work_mode = (data.get("work_mode") or "onsite").strip()
+    if work_mode not in WORK_MODES:
+        return jsonify(error="work mode must be one of: " + ", ".join(WORK_MODES)), 400
+
+    schedule = (data.get("schedule") or "full_time").strip()
+    if schedule not in SCHEDULES:
+        return jsonify(error="schedule must be one of: " + ", ".join(SCHEDULES)), 400
+
+    stipend_period = (data.get("stipend_period") or "").strip() or None
+    if stipend_period and stipend_period not in STIPEND_PERIODS:
+        return jsonify(
+            error="stipend period must be one of: " + ", ".join(STIPEND_PERIODS)
+        ), 400
+
+    start_date = (data.get("start_date") or "").strip() or None
+    if start_date:
+        try:
+            date.fromisoformat(start_date)
+        except ValueError:
+            return jsonify(error="start date must be a date like 2026-09-01"), 400
+
 
 # Admin can edit any company.
 # Owners can only edit their own company.
