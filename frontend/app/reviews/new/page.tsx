@@ -65,6 +65,10 @@ function NewReviewForm() {
     environment: 0,
   });
   const [comment, setComment] = React.useState("");
+  // Two optional questions. Blank is a perfectly valid answer and the API
+  // stores it as "not said", so neither one is ever required to submit.
+  const [gender, setGender] = React.useState("");
+  const [internYear, setInternYear] = React.useState("");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -149,6 +153,8 @@ function NewReviewForm() {
       company_id: companyId,
       ...scores,
       comment: comment.trim(),
+      gender,
+      intern_year: internYear,
     });
     setIsSubmitting(false);
 
@@ -228,6 +234,53 @@ function NewReviewForm() {
             className="w-full rounded-control border border-border bg-white p-3.5 text-body text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
+
+        {/* optional, and only ever shown added up on the company's charts */}
+        <fieldset className="space-y-3 rounded-card border border-border bg-paper p-4">
+          <legend className="px-1 text-label text-ink">About you (optional)</legend>
+          <p className="text-sm text-ink-secondary">
+            These two answers are never shown next to your review. They only
+            appear as totals on the company&apos;s charts, and only once enough
+            people have answered, so nobody can work out who said what. You can
+            skip both.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="gender" className="text-label text-ink-secondary">
+                Gender
+              </label>
+              <select
+                id="gender"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full rounded-control border border-border bg-white p-3 text-body text-ink"
+              >
+                <option value="">Prefer not to answer</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="intern_year" className="text-label text-ink-secondary">
+                Year you interned
+              </label>
+              <input
+                id="intern_year"
+                type="number"
+                inputMode="numeric"
+                min={2000}
+                max={2100}
+                value={internYear}
+                onChange={(e) => setInternYear(e.target.value)}
+                placeholder="2026"
+                className="w-full rounded-control border border-border bg-white p-3 text-body text-ink placeholder:text-ink-muted"
+              />
+            </div>
+          </div>
+        </fieldset>
 
         {submitError && <p className="text-sm text-danger">{submitError}</p>}
 
