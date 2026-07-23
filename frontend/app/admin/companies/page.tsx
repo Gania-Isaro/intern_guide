@@ -125,6 +125,20 @@ export default function ManageCompaniesPage() {
     setForm(EMPTY_FORM);
   }
 
+  // Approve or reject one business. On success it leaves the queue straight
+  // away, and an approval also lands in the list below it.
+  async function decide(id: number, choice: "approve" | "reject") {
+    setDeciding(id);
+    const result = await apiPost(`/admin/companies/${id}/${choice}`, {});
+    if (result.ok) {
+      setPending((current) => current.filter((company) => company.id !== id));
+      if (choice === "approve") await loadCompanies();
+    } else {
+      setMessage(result.error);
+    }
+    setDeciding(null);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!form.name.trim()) {
