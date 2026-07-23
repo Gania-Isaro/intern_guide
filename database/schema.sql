@@ -24,21 +24,58 @@ CREATE TABLE companies (
   industry       VARCHAR(100),
   location       VARCHAR(150),
   website        VARCHAR(255),
+  -- the address the owner copies out of Google Maps, e.g. "KG 7 Ave, Kigali".
+  -- the profile page drops it straight into a Google Maps iframe, so anything
+  -- Google can find works. NULL simply means "no map on this profile".
+  google_address VARCHAR(255),
+  -- headcount bracket rather than an exact number, which owners rarely know
+  size           ENUM('1-10', '11-50', '51-200', '200+'),
+  founded_year   SMALLINT,
+  -- a company an owner registered starts as 'pending' and only appears in
+  -- search once an admin approves it. Companies added by an admin skip the
+  -- queue, which is why the default is 'approved'.
+  status         ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved',
   -- kept up to date by the rating engine, stays NULL until the first approved review
   average_rating DECIMAL(2,1),
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- What a company offers its interns: meals, transport money, a laptop, and so
+-- on. One row per perk instead of a column per perk, so adding a new perk is a
+-- Python change and never a schema change. The allowed names live in
+-- backend/app/routes/manage.py (AMENITIES).
+CREATE TABLE company_amenities (
+  company_id INT NOT NULL,
+  amenity    VARCHAR(40) NOT NULL,
+  PRIMARY KEY (company_id, amenity),
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+
 CREATE TABLE internships (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  company_id  INT NOT NULL,
-  title       VARCHAR(150) NOT NULL,
-  description TEXT,
-  location    VARCHAR(150),
-  deadline    DATE,
-  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  company_id      INT NOT NULL,
+  title           VARCHAR(150) NOT NULL,
+  description     TEXT,
+  location        VARCHAR(150),
+  deadline        DATE,
+  is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+  -- Pay lives on the posting, not on the company: the same employer can run a
+  -- paid engineering internship and an unpaid marketing one at the same time.
+  -- 'intern_pays' covers programmes the student is charged for.
+  compensation    ENUM('paid', 'stipend', 'unpaid', 'academic_credit', 'intern_pays')
+                    NOT NULL DEFAULT 'unpaid',
+  stipend_amount  DECIMAL(10,2),
+  stipend_currency CHAR(3) NOT NULL DEFAULT 'RWF',
+  stipend_period  ENUM('hour', 'week', 'month', 'total'),
+  work_mode       ENUM('onsite', 'hybrid', 'remote') NOT NULL DEFAULT 'onsite',
+  schedule        ENUM('full_time', 'part_time', 'flexible') NOT NULL DEFAULT 'full_time',
+  duration_months TINYINT,
+  start_date      DATE,
+  openings        SMALLINT NOT NULL DEFAULT 1,
+  -- broad area of work, e.g. Engineering, Design, Finance. Used by the filters.
+  field           VARCHAR(60),
+  created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
@@ -55,6 +92,11 @@ CREATE TABLE reviews (
   rating      DECIMAL(2,1) NOT NULL,
   comment     TEXT,
   status      ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  -- Optional, and only ever shown added up. Both questions are skippable on the
+  -- review form, and the charts hide themselves when too few people answered,
+  -- so a single reviewer can never be picked out of a graph.
+  gender      ENUM('female', 'male', 'other', 'prefer_not_to_say'),
+  intern_year SMALLINT,
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
