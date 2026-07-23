@@ -173,6 +173,80 @@ export default function ManageCompaniesPage() {
         </p>
       </div>
 
+
+      {/* ---------- businesses waiting for a decision ---------- */}
+      {pending.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">
+            Waiting for approval ({pending.length})
+          </h2>
+          <p className="text-sm text-ink-secondary">
+            Owners registered these themselves. They stay hidden from students
+            until you approve them.
+          </p>
+
+          {pending.map((company) => (
+            <div
+              key={company.id}
+              className="space-y-3 rounded-card border border-border bg-white p-5 shadow-soft"
+            >
+              <div>
+                <p className="font-medium">{company.name}</p>
+                <p className="text-sm text-ink-secondary">
+                  {[company.industry, company.location].filter(Boolean).join(" · ") ||
+                    "No details given"}
+                </p>
+                <p className="text-sm text-ink-muted">
+                  Registered by {company.owner_name} ({company.owner_email})
+                </p>
+              </div>
+
+              {company.description && (
+                <p className="text-sm text-ink-secondary">{company.description}</p>
+              )}
+
+              <div className="flex flex-wrap gap-2 text-sm text-ink-secondary">
+                {company.website && <span>{company.website}</span>}
+                {company.google_address && <span>· {company.google_address}</span>}
+                {company.size && <span>· {company.size} people</span>}
+                {company.founded_year && <span>· founded {company.founded_year}</span>}
+              </div>
+
+              {company.amenities.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {company.amenities.map((amenity) => (
+                    <span
+                      key={amenity}
+                      className="rounded-chip bg-paper px-2.5 py-1 text-sm text-ink-secondary"
+                    >
+                      {labelFor(AMENITY_LABELS, amenity)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={deciding === company.id}
+                  onClick={() => decide(company.id, "approve")}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={deciding === company.id}
+                  onClick={() => decide(company.id, "reject")}
+                >
+                  Reject
+                </Button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
       {/* ---------- the add / edit form ---------- */}
       <form
         onSubmit={handleSubmit}
