@@ -8,6 +8,7 @@ import * as React from "react";
 import Link from "next/link";
 
 import { apiGet, apiPost } from "@/lib/api";
+import { AMENITY_LABELS, labelFor } from "@/lib/labels";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,21 @@ interface Company {
   location: string | null;
   website: string | null;
   description?: string | null;
+}
+
+interface PendingCompany {
+  id: number;
+  name: string;
+  description: string | null;
+  industry: string | null;
+  location: string | null;
+  website: string | null;
+  google_address: string | null;
+  size: string | null;
+  founded_year: number | null;
+  owner_name: string;
+  owner_email: string;
+  amenities: string[];
 }
 
 const EMPTY_FORM = {
@@ -36,6 +52,9 @@ export default function ManageCompaniesPage() {
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+    // businesses owners registered themselves, waiting for a yes or no
+  const [pending, setPending] = React.useState<PendingCompany[]>([]);
+  const [deciding, setDeciding] = React.useState<number | null>(null);
 
   const [form, setForm] = React.useState(EMPTY_FORM);
   // null = the form creates a new company; an id = the form edits that one
@@ -55,9 +74,19 @@ export default function ManageCompaniesPage() {
     setLoading(false);
   }, []);
 
+    const loadPending = React.useCallback(async () => {
+    const result = await apiGet("/admin/companies");
+    if (result.ok) {
+      setPending((result.data as { companies: PendingCompany[] }).companies);
+    }
+  }, []);
+
   React.useEffect(() => {
-    if (user?.role === "admin") loadCompanies();
-  }, [user, loadCompanies]);
+    if (user?.role === "admin") {
+      loadCompanies();
+      loadPending();
+    }
+  }, [user, loadCompanies, loadPending]);
 
   if (isLoading) return <LoadingState label="Checking your account…" />;
   if (!user || user.role !== "admin") {
