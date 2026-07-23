@@ -4,6 +4,7 @@ import * as React from "react";
 import { Search } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
+import { AMENITY_LABELS, COMPENSATION_LABELS, SCHEDULE_LABELS, WORK_MODE_LABELS, } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { CompanyCard, type Company } from "@/components/company/company-card";
 import {
@@ -33,6 +34,10 @@ const INDUSTRIES = ["Software", "Data & AI", "E-commerce", "Fintech", "Telecom"]
 export default function CompaniesPage() {
     const [search, setSearch] = React.useState("");
     const [industry, setIndustry] = React.useState("");
+    const [compensation, setCompensation] = React.useState<string[]>([]);
+    const [workMode, setWorkMode] = React.useState<string[]>([]);
+    const [schedule, setSchedule] = React.useState<string[]>([]);
+    const [amenity, setAmenity] = React.useState<string[]>([]);
     const [sort, setSort] = React.useState("rating");
     const [page, setPage] = React.useState(1);
     const [searchInput, setSearchInput] = React.useState("");
@@ -57,6 +62,10 @@ export default function CompaniesPage() {
                 sort,
                 page,
                 per_page: 12,
+                compensation: compensation.join(","),
+                work_mode: workMode.join(","),
+                schedule: schedule.join(","),
+                amenity: amenity.join(","),
             });
             if (!active) return;
             if (!result.ok) {
@@ -69,13 +78,28 @@ export default function CompaniesPage() {
         return () => {
             active = false;
         };
-    }, [search, industry, sort, page, reloadKey]);
+        }, [search, industry, sort, page, reloadKey, compensation, workMode, schedule, amenity]);
 
     function retry() {
   setStatus("loading");
   setReloadKey((k) => k + 1);
 }
 
+    // Tick a box on, tick it off again. Every filter group works the same way,
+    // so they all share this one function.
+    function toggle(
+        current: string[],
+        set: (next: string[]) => void,
+        value: string
+    ) {
+        set(
+            current.includes(value)
+                ? current.filter((item) => item !== value)
+                : [...current, value]
+        );
+        setPage(1);
+    }
+    
     function resetFilters() {
         setSearch("");
         setSearchInput("");
