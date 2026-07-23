@@ -99,16 +99,26 @@ export default function CompaniesPage() {
         );
         setPage(1);
     }
-    
-    function resetFilters() {
+
+       function resetFilters() {
         setSearch("");
         setSearchInput("");
         setIndustry("");
         setSort("rating");
+        setCompensation([]);
+        setWorkMode([]);
+        setSchedule([]);
+        setAmenity([]);
         setPage(1);
     }
 
-    const hasActiveFilters = search !== "" || industry !== "";
+       const hasActiveFilters =
+        search !== "" ||
+        industry !== "" ||
+        compensation.length > 0 ||
+        workMode.length > 0 ||
+        schedule.length > 0 ||
+        amenity.length > 0;
 
     return (
     <div className="space-y-8 py-2">
@@ -168,6 +178,37 @@ export default function CompaniesPage() {
         </select>
       </div>    
 
+      {/* --- what the internship is actually like --- */}
+      <div className="space-y-4 rounded-card border border-border bg-white p-5 shadow-soft">
+        <FilterGroup
+          title="Pay"
+          labels={COMPENSATION_LABELS}
+          selected={compensation}
+          onToggle={(value) => toggle(compensation, setCompensation, value)}
+        />
+        <FilterGroup
+          title="Where"
+          labels={WORK_MODE_LABELS}
+          selected={workMode}
+          onToggle={(value) => toggle(workMode, setWorkMode, value)}
+        />
+        <FilterGroup
+          title="Hours"
+          labels={SCHEDULE_LABELS}
+          selected={schedule}
+          onToggle={(value) => toggle(schedule, setSchedule, value)}
+        />
+        <FilterGroup
+          title="What they offer"
+          labels={AMENITY_LABELS}
+          selected={amenity}
+          onToggle={(value) => toggle(amenity, setAmenity, value)}
+        />
+        <p className="text-sm text-ink-muted">
+          Pay, place and hours belong to a posting, so a company shows up when
+          one of its open internships matches everything you ticked.
+        </p>
+      </div>
       {status === "ready" && data && (
         <p className= "text-sm text-ink-muted">
             {data.total} {data.total === 1 ? "company" : "companies"}
@@ -236,6 +277,46 @@ export default function CompaniesPage() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// One row of tick-able chips. A chip is just a button that remembers whether
+// it is on, which reads better on a phone than a row of checkboxes.
+function FilterGroup({
+  title,
+  labels,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  labels: Record<string, string>;
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-label text-ink-secondary">{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(labels).map(([value, label]) => {
+          const isOn = selected.includes(value);
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={isOn}
+              onClick={() => onToggle(value)}
+              className={
+                isOn
+                  ? "rounded-chip border border-primary bg-primary-tint px-3 py-1.5 text-sm text-primary-deep"
+                  : "rounded-chip border border-border bg-white px-3 py-1.5 text-sm text-ink-secondary hover:border-primary"
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
