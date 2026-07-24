@@ -1,5 +1,5 @@
 // This file defines every color, font, size, and spacing value our app
-// is allowed to use — pulled directly from the Figma design file, so
+// is allowed to use - pulled directly from the Figma design file, so
 // what we build in code matches what's designed.
 import type { Config } from "tailwindcss";
 
@@ -22,7 +22,15 @@ const config: Config = {
     },
 
     extend: {
-      // COLORS — named by meaning (primary, ink, paper), not by the
+      // SPACING - the named size the design uses for padding inside a card
+      // and for the gap between cards. Tailwind quietly ignores a class it
+      // does not know, so without this line `p-lg` produced no padding at
+      // all and card content sat flat against the border.
+      spacing: {
+        lg: "1.5rem", // 24px
+      },
+
+      // COLORS - named by meaning (primary, ink, paper), not by the
       // actual color name, so changing a color later only means
       // editing one value in globals.css, not every component.
       colors: {
@@ -34,14 +42,14 @@ const config: Config = {
 
         paper: "hsl(var(--paper))", // light gray-white, used for input backgrounds
 
-        // Text colors — three shades of the same dark green-gray ("ink")
+        // Text colors - three shades of the same dark green-gray ("ink")
         ink: {
           DEFAULT: "hsl(var(--ink))",             // main text
           secondary: "hsl(var(--ink-secondary))", // slightly lighter text
           muted: "hsl(var(--ink-muted))",         // faded/placeholder text
         },
 
-        // The ONE accent color in the whole design — green. Used for
+        // The ONE accent color in the whole design - green. Used for
         // primary buttons, links, and the "verified" badge.
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -66,13 +74,13 @@ const config: Config = {
         },
       },
 
-      // FONTS — "display" for headings/buttons, "sans" for body text
+      // FONTS - "display" for headings/buttons, "sans" for body text
       fontFamily: {
         display: ["var(--font-poppins)", "system-ui", "sans-serif"],
         sans: ["var(--font-nunito-sans)", "system-ui", "sans-serif"],
       },
 
-      // FONT SIZES — matched exactly to the text styles shown in Figma
+      // FONT SIZES - matched exactly to the text styles shown in Figma
       fontSize: {
         label: ["13px", { lineHeight: "normal", fontWeight: "600" }],       // form field labels
         body: ["15px", { lineHeight: "24px" }],                              // normal paragraph text
@@ -82,7 +90,7 @@ const config: Config = {
         badge: ["12.5px", { lineHeight: "normal", fontWeight: "600" }],      // small badge text
       },
 
-      // ROUNDED CORNERS — a different roundness for each type of element
+      // ROUNDED CORNERS - a different roundness for each type of element
       borderRadius: {
         chip: "8px",      // small pill-shaped elements
         control: "10px",  // buttons and inputs
@@ -91,7 +99,7 @@ const config: Config = {
         full: "999px",    // fully round, used for badges
       },
 
-      // The one soft shadow used everywhere in the design — never a hard/dark shadow
+      // The one soft shadow used everywhere in the design - never a hard/dark shadow
       boxShadow: {
         soft: "0px 12px 32px 0px rgba(24, 36, 32, 0.05)",
       },

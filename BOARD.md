@@ -1,4 +1,4 @@
-# InternGuide — How We Use the Scrum Board
+# InternGuide - How We Use the Scrum Board
 
 **Board:** [InternGuide Sprint Board](https://github.com/users/Gania-Isaro/projects/2) · **Repo:** `Gania-Isaro/intern_guide`
 
@@ -15,7 +15,7 @@ We run **4 one-week sprints**. All work lives as GitHub issues on the board.
 | **In Progress** | Actively being worked on (one person, one card). |
 | **Done** | Merged via PR and meets the Definition of Done. |
 
-Move a card by **dragging** it between columns — its status updates automatically.
+Move a card by **dragging** it between columns - its status updates automatically.
 
 ---
 
@@ -39,17 +39,17 @@ Move a card by **dragging** it between columns — its status updates automatica
 
 Each issue is labeled so you can filter the board:
 
-- `epic:*` — which part of the product (foundation, auth, discovery, reviews, admin, ops, owner-stretch)
-- `team:backend` / `team:frontend` — which team owns it
-- `owner:<name>` — the lead developer for that card
-- `priority:high|medium|low` — Must / Should / Could
-- `points:*` — story-point estimate
-- **Milestone** — which sprint (Sprint 1–4)
+- `epic:*` - which part of the product (foundation, auth, discovery, reviews, admin, ops, owner-stretch)
+- `team:backend` / `team:frontend` - which team owns it
+- `owner:<name>` - the lead developer for that card
+- `priority:high|medium|low` - Must / Should / Could
+- `points:*` - story-point estimate
+- **Milestone** - which sprint (Sprint 1–4)
 
 **Useful filters** (type in the board's filter bar):
-- `milestone:"Sprint 1"` — only this sprint's work
-- `label:owner:wilson` — only your cards
-- `label:team:frontend` — only frontend work
+- `milestone:"Sprint 1"` - only this sprint's work
+- `label:owner:wilson` - only your cards
+- `label:team:frontend` - only frontend work
 
 Tip: **Group by → Milestone** (board ⚙️) shows sprints as swimlanes.
 
@@ -68,7 +68,7 @@ Tip: **Group by → Milestone** (board ⚙️) shows sprints as swimlanes.
 
 ## Teams
 
-**Backend** — Wilson (lead), Gania, Pascaline · Flask API, MySQL, auth, ratings, moderation
-**Frontend** — Aline, Alicia, Ines · Next.js (TS) + Tailwind v3 + shadcn/ui
+**Backend** - Wilson (lead), Gania, Pascaline · Flask API, MySQL, auth, ratings, moderation
+**Frontend** - Aline, Alicia, Ines · Next.js (TS) + Tailwind v3 + shadcn/ui
 
 Link a PR to its issue with `Closes #<number>` in the PR description so the card moves to Done automatically on merge.

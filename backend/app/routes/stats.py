@@ -10,6 +10,29 @@ from ..db import get_db
 
 bp = Blueprint("stats", __name__)
 
+
+# The three counters on the homepage. They must match what a visitor actually
+# finds after clicking through, so everything counts only what is public:
+# approved companies, approved reviews, and the industries those companies span.
+@bp.get("/stats/summary")
+def summary():
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT"
+        " (SELECT COUNT(*) FROM companies WHERE status = 'approved') AS companies,"
+        " (SELECT COUNT(*) FROM reviews WHERE status = 'approved') AS reviews,"
+        " (SELECT COUNT(DISTINCT industry) FROM companies"
+        "   WHERE status = 'approved' AND industry IS NOT NULL AND industry <> '')"
+        "   AS industries"
+    )
+    row = cursor.fetchone()
+    return jsonify(
+        companies=int(row["companies"]),
+        reviews=int(row["reviews"]),
+        industries=int(row["industries"]),
+    )
+
+
 # The gender split is only shown once enough people have answered. With two or
 # three reviews a chart saying "one woman in 2025" points at a real person, and
 # reviewers were promised their answer would only ever be shown added up.

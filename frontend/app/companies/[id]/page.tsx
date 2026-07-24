@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShieldCheck, MapPin, Globe, Briefcase, CalendarClock } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
@@ -85,11 +86,30 @@ export default function CompanyProfilePage({
 }) {
   const { id } = React.use(params);
 
+  const { user } = useAuth();
+
   const [company, setCompany] = React.useState<CompanyDetail | null>(null);
   const [status, setStatus] = React.useState<
     "loading" | "ready" | "error" | "not-found"
   >("loading");
   const [reloadKey, setReloadKey] = React.useState(0);
+  // may the person looking at this page review THIS company? Only a student
+  // with an approved proof for it can, so the button shows nowhere else.
+  const [canReview, setCanReview] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user || user.role !== "student") {
+      setCanReview(false);
+      return;
+    }
+    (async () => {
+      const result = await apiGet("/me/placements");
+      if (result.ok) {
+        const ids = (result.data as { company_ids: number[] }).company_ids;
+        setCanReview(ids.includes(Number(id)));
+      }
+    })();
+  }, [user, id]);
 
   // fetch on id / reload change, in an async closure so nothing is set
   // synchronously in the effect body
@@ -190,9 +210,17 @@ export default function CompanyProfilePage({
           ) : (
             <p className="text-sm text-ink-muted">No reviews yet</p>
           )}
-          <Button asChild variant="primary">
-            <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
-          </Button>
+          {canReview ? (
+            <Button asChild variant="primary">
+              <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
+            </Button>
+          ) : user?.role === "student" ? (
+            // a student who has not proved a placement here yet: point them at
+            // uploading proof, with this company already chosen
+            <Button asChild variant="secondary">
+              <Link href={`/verify?company=${company.id}`}>Verify your placement here</Link>
+            </Button>
+          ) : null}
         </div>
       </header>
       {/* --- about --- */}
@@ -310,9 +338,15 @@ export default function CompanyProfilePage({
             title="No reviews yet"
             description="Be the first verified intern to review this company."
             action={
-              <Button asChild variant="secondary" size="sm">
-                <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
-              </Button>
+              canReview ? (
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
+                </Button>
+              ) : user?.role === "student" ? (
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/verify?company=${company.id}`}>Verify your placement to review</Link>
+                </Button>
+              ) : undefined
             }
           />
         ) : (

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
+import { RedirectToLogin } from "@/components/auth/gates";
 
 interface MyReview {
   id: number;
@@ -76,20 +77,7 @@ export default function MyReviewsPage() {
   }, [user, reloadKey]);
 
   if (isLoading) return <LoadingState label="Checking your account…" />;
-
-  if (!user) {
-    return (
-      <EmptyState
-        title="Log in to see your reviews"
-        description="Your submitted reviews and their status live here."
-        action={
-          <Button asChild variant="primary" size="sm">
-            <Link href="/login">Log in</Link>
-          </Button>
-        }
-      />
-    );
-  }
+  if (!user) return <RedirectToLogin />;
 
   if (status === "loading") return <LoadingState label="Loading your reviews…" />;
 
@@ -109,8 +97,13 @@ export default function MyReviewsPage() {
     <div className="space-y-8 py-2">
       <header className="space-y-2">
         <h1 className="font-display text-heading text-ink">My reviews</h1>
+        {/* say whose reviews these are, so it is clear you are looking at
+            your own account's data */}
         <p className="text-body text-ink-secondary">
-          Each review shows its status — only approved ones appear publicly.
+          Signed in as <span className="font-medium text-ink">{user.name}</span> ({user.email}).
+        </p>
+        <p className="text-body text-ink-secondary">
+          Each review shows its status - only approved ones appear publicly.
         </p>
       </header>
 

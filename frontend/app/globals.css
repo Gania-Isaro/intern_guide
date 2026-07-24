@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 /* This is where the ACTUAL color values live. tailwind.config.ts only
-   refers to names like --primary — this file says what --primary
+   refers to names like --primary - this file says what --primary
    really is. To change a color everywhere, edit ONLY this file. */
 @layer base {
   :root {

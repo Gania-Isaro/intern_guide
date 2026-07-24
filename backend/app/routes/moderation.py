@@ -1,6 +1,6 @@
 import os
 
-from flask import Blueprint, g, jsonify
+from flask import Blueprint, g, jsonify, send_from_directory
 
 from ..db import get_db
 from ..services.rating import recompute_company_average
@@ -52,8 +52,42 @@ def pending_proofs():
     for proof in proofs:
         proof["created_at"] = proof["created_at"].isoformat()
         # the admin sees just the stored filename, not a server path
-        proof["file_name"] = os.path.basename(proof.pop("file_path") or "")
+        name = os.path.basename(proof.pop("file_path") or "")
+        proof["file_name"] = name
+        # so the frontend knows whether to show an image or a PDF link
+        proof["file_type"] = "pdf" if name.lower().endswith(".pdf") else "image"
     return jsonify(proofs=proofs, total=len(proofs))
+
+
+@bp.get("/proofs/<int:proof_id>/file")
+@role_required("admin")
+def proof_file(proof_id):
+    """Serve one pending proof's file for the admin to preview.
+
+    The file lives outside the web root, so this is the only way to see it, and
+    it is admin-only. After a proof is approved or rejected its file is deleted
+    (privacy), so this returns 404 for anything that has already been decided.
+    """
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT file_path FROM verification_proofs WHERE id = %s", (proof_id,)
+    )
+    proof = cursor.fetchone()
+    if proof is None or not proof["file_path"]:
+        return jsonify(error="proof file not found"), 404
+
+    # basename only - never trust the stored path to point outside the folder;
+    # send_from_directory also refuses to escape the folder with "../"
+    name = os.path.basename(proof["file_path"])
+    response = send_from_directory(
+        _upload_folder(),
+        name,
+        as_attachment=False,  # show it in the browser, do not download
+    )
+    # it is a personal document: do not sniff the type, do not cache it
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def _decide_review(review_id, new_status):

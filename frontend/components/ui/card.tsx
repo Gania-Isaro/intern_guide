@@ -26,7 +26,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardHeader.displayName = "CardHeader";
 
-// The card title text, e.g. a company name — sized to match Figma's
+// The card title text, e.g. a company name - sized to match Figma's
 // "card-title" text style (16px, medium weight)
 const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (

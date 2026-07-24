@@ -1,39 +1,43 @@
 "use client";
 
+// Editing one company, on its own page, so the admin no longer has to scroll
+// back up a shared form. The id comes from the address: /admin/companies/2/edit
+
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { apiGet, apiPost } from "@/lib/api";
+import { AMENITY_LABELS, labelFor } from "@/lib/labels";
 import { useAuth } from "@/components/providers/auth-provider";
+import { AdminTabs } from "@/components/layout/admin-tabs";
+import { NotAllowed, RedirectToLogin } from "@/components/auth/gates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorState, LoadingState } from "@/components/ui/states";
-import { NotAllowed, RedirectToLogin } from "@/components/auth/gates";
-import { AMENITY_LABELS, labelFor } from "@/lib/labels";
 
 const SIZES = ["1-10", "11-50", "51-200", "200+"];
 
-interface MyCompany {
-  company: {
-    id: number;
-    name: string;
-    description: string | null;
-    industry: string | null;
-    location: string | null;
-    website: string | null;
-    google_address: string | null;
-    size: string | null;
-    founded_year: number | null;
-    amenities: string[];
-  };
+interface Company {
+  id: number;
+  name: string;
+  description: string | null;
+  industry: string | null;
+  location: string | null;
+  website: string | null;
+  google_address: string | null;
+  size: string | null;
+  founded_year: number | null;
+  status: "pending" | "approved" | "rejected";
+  amenities: string[];
 }
 
-export default function EditCompanyPage() {
+export default function AdminEditCompanyPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const companyId = params.id;
 
-  const [companyId, setCompanyId] = React.useState<number | null>(null);
   const [form, setForm] = React.useState({
     name: "",
     industry: "",
@@ -44,7 +48,6 @@ export default function EditCompanyPage() {
     size: "",
     founded_year: "",
   });
-  // the perks ticked on this page, sent to the API as a list of codes
   const [amenities, setAmenities] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -54,10 +57,9 @@ export default function EditCompanyPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     setError(null);
-    const result = await apiGet("/me/company");
+    const result = await apiGet(`/admin/companies/${companyId}`);
     if (result.ok) {
-      const { company } = result.data as MyCompany;
-      setCompanyId(company.id);
+      const { company } = result.data as { company: Company };
       setForm({
         name: company.name ?? "",
         industry: company.industry ?? "",
@@ -73,26 +75,21 @@ export default function EditCompanyPage() {
       setError(result.error);
     }
     setLoading(false);
-  }, []);
+  }, [companyId]);
 
   React.useEffect(() => {
-    if (user?.role === "company_owner") load();
+    if (user?.role === "admin") load();
   }, [user, load]);
 
   if (isLoading) return <LoadingState label="Checking your account…" />;
   if (!user) return <RedirectToLogin />;
-  if (user.role !== "company_owner") {
+  if (user.role !== "admin") {
     return (
-      <NotAllowed
-        title="Company owners only"
-        text="This page is for the person who manages a company profile."
-      />
+      <NotAllowed title="Admins only" text="Only admins can edit companies." />
     );
   }
-  if (loading) return <LoadingState label="Loading your company…" />;
-  if (error || companyId === null) {
-    return <ErrorState description={error ?? "Could not load your company."} onRetry={load} />;
-  }
+  if (loading) return <LoadingState label="Loading the company…" />;
+  if (error) return <ErrorState description={error} onRetry={load} />;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -107,7 +104,7 @@ export default function EditCompanyPage() {
       amenities,
     });
     if (result.ok) {
-      router.push("/owner"); // back to the dashboard, which reloads fresh data
+      router.push("/admin/companies"); // back to the list
     } else {
       setMessage(result.error);
       setSaving(false);
@@ -115,15 +112,20 @@ export default function EditCompanyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 py-10 px-4">
+    <div className="mx-auto max-w-3xl space-y-6 py-10 px-4">
       <div>
-        <h1 className="text-2xl font-bold">Edit company profile</h1>
+        <h1 className="text-2xl font-bold">Edit {form.name || "company"}</h1>
         <p className="text-ink-secondary">
-          This is what students see on your company page.
+          This is what students see on the company page.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <AdminTabs />
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-card border border-border bg-white p-lg shadow-soft"
+      >
         <Input
           id="name"
           label="Name"
@@ -150,10 +152,6 @@ export default function EditCompanyPage() {
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
         />
-
-        {/* Anything Google Maps can find works, because that is literally what
-            we hand it. Search your business on Google Maps and copy the
-            address it shows. */}
         <Input
           id="google_address"
           label="Address on Google Maps"
@@ -191,11 +189,9 @@ export default function EditCompanyPage() {
           />
         </div>
 
-        {/* What students filter on. Only tick what you really provide - these
-            show as tags on your public page. */}
         <fieldset className="space-y-2">
           <legend className="text-label text-ink-secondary">
-            What you offer interns
+            What they offer interns
           </legend>
           <div className="flex flex-wrap gap-2 pt-1">
             {Object.keys(AMENITY_LABELS).map((code) => {
@@ -224,6 +220,7 @@ export default function EditCompanyPage() {
             })}
           </div>
         </fieldset>
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor="description" className="text-label text-ink-secondary">
             Description
@@ -237,18 +234,17 @@ export default function EditCompanyPage() {
           />
         </div>
 
-        {message && <p className="text-sm text-ink-secondary">{message}</p>}
+        {message && <p className="text-sm text-danger">{message}</p>}
 
         <div className="flex gap-3">
           <Button type="submit" disabled={saving}>
-            Save changes
+            {saving ? "Saving…" : "Save changes"}
           </Button>
           <Button asChild variant="secondary">
-            <Link href="/owner">Cancel</Link>
+            <Link href="/admin/companies">Cancel</Link>
           </Button>
         </div>
       </form>
     </div>
   );
 }
- 
