@@ -9,6 +9,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/states";
+import { NotAllowed, RedirectToLogin } from "@/components/auth/gates";
 import { AMENITY_LABELS, labelFor } from "@/lib/labels";
 
 const SIZES = ["1-10", "11-50", "51-200", "200+"];
@@ -35,18 +36,13 @@ export default function RegisterBusinessPage() {
   const [done, setDone] = React.useState(false);
 
   if (isLoading) return <LoadingState label="Checking your account…" />;
-
-  if (!user || user.role !== "company_owner") {
+  if (!user) return <RedirectToLogin />;
+  if (user.role !== "company_owner") {
     return (
-      <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
-        <h1 className="text-2xl font-bold">Company owners only</h1>
-        <p className="text-ink-secondary">
-          Register with a company owner account to add your business.
-        </p>
-        <Button asChild variant="secondary" size="sm">
-          <Link href="/">Back to the homepage</Link>
-        </Button>
-      </div>
+      <NotAllowed
+        title="Company owners only"
+        text="Register with a company owner account to add your business."
+      />
     );
   }
 
@@ -156,7 +152,7 @@ export default function RegisterBusinessPage() {
               id="size"
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
-              className="rounded-input border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+              className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
             >
               <option value="">Not saying</option>
               {SIZES.map((size) => (
@@ -185,7 +181,7 @@ export default function RegisterBusinessPage() {
             rows={3}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="rounded-input border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+            className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
           />
         </div>
 

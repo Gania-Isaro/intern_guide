@@ -4,6 +4,7 @@ from flask import Blueprint, g, jsonify, request
 
 from ..db import get_db
 from ..utils.decorators import role_required
+from .moderation import _delete_proof_file
 
 bp = Blueprint("manage", __name__)
 
@@ -206,7 +207,7 @@ def register_company():
         jsonify(
             id=company_id,
             status="pending",
-            message="thanks — an admin will check your business before it goes live",
+            message="thanks - an admin will check your business before it goes live",
         ),
         201,
     )
@@ -230,6 +231,50 @@ def pending_companies():
         company["created_at"] = company["created_at"].isoformat()
         company["amenities"] = _amenities_of(cursor, company["id"])
     return jsonify(companies=companies, total=len(companies))
+
+
+@bp.get("/admin/companies/all")
+@role_required("admin")
+def all_companies():
+    """Every company with its status, so the admin can see hidden ones too.
+
+    The public list at GET /companies deliberately hides anything that is not
+    approved, which is exactly what an admin needs to be able to see.
+    """
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT c.id, c.name, c.industry, c.location, c.website, c.description,"
+        " c.status, c.average_rating, u.name AS owner_name"
+        " FROM companies c LEFT JOIN users u ON u.id = c.owner_id"
+        " ORDER BY c.name ASC"
+    )
+    companies = cursor.fetchall()
+    for company in companies:
+        company["average_rating"] = (
+            float(company["average_rating"])
+            if company["average_rating"] is not None
+            else None
+        )
+    return jsonify(companies=companies, total=len(companies))
+
+
+@bp.get("/admin/companies/<int:company_id>")
+@role_required("admin")
+def one_company(company_id):
+    """One company, whatever its status, for the admin edit form."""
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id, name, description, industry, location, website,"
+        " google_address, size, founded_year, status"
+        " FROM companies WHERE id = %s",
+        (company_id,),
+    )
+    company = cursor.fetchone()
+    if company is None:
+        return jsonify(error="company not found"), 404
+
+    company["amenities"] = _amenities_of(cursor, company_id)
+    return jsonify(company=company)
 
 
 def _decide_company(company_id, new_status):
@@ -258,6 +303,67 @@ def approve_company(company_id):
 @role_required("admin")
 def reject_company(company_id):
     return _decide_company(company_id, "rejected")
+
+
+# ---------- switching a company off and on again, and deleting it ----------
+#
+# Approve/reject above only answer a brand new registration. These two work on
+# any company, so an admin can take a live company off the site without losing
+# its reviews, and put it back later.
+
+def _set_company_status(company_id, new_status):
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
+    if cursor.fetchone() is None:
+        return jsonify(error="company not found"), 404
+
+    cursor.execute(
+        "UPDATE companies SET status = %s WHERE id = %s", (new_status, company_id)
+    )
+    get_db().commit()
+    return jsonify(id=company_id, status=new_status)
+
+
+@bp.post("/admin/companies/<int:company_id>/deactivate")
+@role_required("admin")
+def deactivate_company(company_id):
+    """Hide the company from students. Nothing is deleted."""
+    return _set_company_status(company_id, "rejected")
+
+
+@bp.post("/admin/companies/<int:company_id>/activate")
+@role_required("admin")
+def activate_company(company_id):
+    """Put a hidden company back on the site."""
+    return _set_company_status(company_id, "approved")
+
+
+@bp.delete("/admin/companies/<int:company_id>")
+@role_required("admin")
+def delete_company(company_id):
+    """Delete a company for good.
+
+    The database is set up to cascade, so the internships, reviews, replies,
+    perks and proof records go with it. Proof files live on disk rather than in
+    the database, so those are removed here by hand.
+    """
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute("SELECT id, name FROM companies WHERE id = %s", (company_id,))
+    company = cursor.fetchone()
+    if company is None:
+        return jsonify(error="company not found"), 404
+
+    cursor.execute(
+        "SELECT file_path FROM verification_proofs WHERE company_id = %s",
+        (company_id,),
+    )
+    for proof in cursor.fetchall():
+        _delete_proof_file(proof["file_path"])
+
+    cursor.execute("DELETE FROM companies WHERE id = %s", (company_id,))
+    get_db().commit()
+
+    return jsonify(id=company_id, message=f"{company['name']} was deleted")
 
 # Admin can edit any company.
 # Owners can only edit their own company.

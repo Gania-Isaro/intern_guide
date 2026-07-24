@@ -97,16 +97,22 @@ def logout():
 
 @bp.get("/me")
 def me():
+    # "Who am I?" - the app asks this on every page load. For a logged-out
+    # visitor the honest answer is "nobody", which is a normal 200 reply of
+    # null, NOT an error. Returning 401 here made the browser print a red
+    # "GET /auth/me 401" line on every anonymous page load; no try/catch can
+    # hide that, because the browser logs failed requests itself. So every
+    # "not logged in" case below answers 200 with null instead.
     token = request.cookies.get(COOKIE_NAME)
     if not token:
-        return jsonify(error="not logged in"), 401
+        return jsonify(None)
 
     try:
         payload = jwt.decode(
             token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
         )
     except jwt.InvalidTokenError:
-        return jsonify(error="session expired, please log in again"), 401
+        return jsonify(None)
 
     cursor = get_db().cursor(dictionary=True)
     cursor.execute(
@@ -115,7 +121,7 @@ def me():
     )
     user = cursor.fetchone()
     if user is None:
-        return jsonify(error="not logged in"), 401
+        return jsonify(None)
 
     user["is_verified"] = bool(user["is_verified"])
     return jsonify(user)

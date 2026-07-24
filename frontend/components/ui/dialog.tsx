@@ -1,7 +1,7 @@
 "use client"; // this component uses interactivity (open/close), so it must run in the browser
 
 import * as React from "react";
-// Radix gives us a pre-built, accessible modal system — we just style it
+// Radix gives us a pre-built, accessible modal system - we just style it
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react"; // the "close" icon
 

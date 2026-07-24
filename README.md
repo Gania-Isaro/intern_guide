@@ -1,6 +1,6 @@
 # InternGuide
 
-Verified internship reviews — by interns, for interns. Students prove
+Verified internship reviews - by interns, for interns. Students prove
 they interned at a company, rate it across four categories, and their
 reviews go public after admin approval. Built by **team THE GRID** (ALU).
 
@@ -19,7 +19,7 @@ database/   schema.sql and seed.sql
 docs/       deployment and technical docs
 ```
 
-Each side owns its own dependencies and config — run `npm` commands from
+Each side owns its own dependencies and config - run `npm` commands from
 `frontend/`, and Python commands from `backend/`.
 
 ## Run it locally
@@ -61,10 +61,10 @@ Open http://localhost:3000.
 
 | Email | Who |
 |---|---|
-| `aline@alustudent.com` | student, verified — can write reviews |
-| `sandrine@alustudent.com` | student, not verified — sees the proof-upload flow |
-| `grace@kivusoftware.rw` | company owner — owner dashboard, replies |
-| `admin@internguide.rw` | admin — moderation queue, manage companies |
+| `aline@alustudent.com` | student, verified - can write reviews |
+| `sandrine@alustudent.com` | student, not verified - sees the proof-upload flow |
+| `grace@kivusoftware.rw` | company owner - owner dashboard, replies |
+| `admin@internguide.rw` | admin - moderation queue, manage companies |
 
 ## Tests
 
@@ -77,7 +77,7 @@ cd frontend  && npm test                        # frontend suite
 
 1. A student uploads proof of their placement (pdf/png/jpg, max 5 MB).
 2. An admin approves it → the student becomes a verified intern; the
-   uploaded file is deleted for privacy — only the decision is kept.
+   uploaded file is deleted for privacy - only the decision is kept.
 3. Verified interns submit reviews (4 star categories + comment).
 4. Reviews are born `pending`; an admin approves or rejects each one.
 5. Only approved reviews appear publicly, and only they count toward a

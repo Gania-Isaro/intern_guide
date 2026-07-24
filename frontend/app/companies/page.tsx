@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
@@ -31,27 +32,85 @@ const SORT_CHOICES = [
 
 const INDUSTRIES = ["Software", "Data & AI", "E-commerce", "Fintech", "Telecom"];
 
+// The homepage search box sends people here as /companies?search=Kivu, so the
+// box on this page starts out holding whatever they typed there.
 export default function CompaniesPage() {
-    const [search, setSearch] = React.useState("");
+    return (
+        <React.Suspense fallback={<CompanyGridSkeleton count={6} />}>
+            <CompaniesBrowser />
+        </React.Suspense>
+    );
+}
+
+function CompaniesBrowser() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    const initialSearch = searchParams.get("search") ?? "";
+
+    const [search, setSearch] = React.useState(initialSearch);
     const [industry, setIndustry] = React.useState("");
     const [compensation, setCompensation] = React.useState<string[]>([]);
     const [workMode, setWorkMode] = React.useState<string[]>([]);
     const [schedule, setSchedule] = React.useState<string[]>([]);
     const [amenity, setAmenity] = React.useState<string[]>([]);
     const [sort, setSort] = React.useState("rating");
-    const [page, setPage] = React.useState(1);
-    const [searchInput, setSearchInput] = React.useState("");
+    // the page number lives in the address bar (?page=2), so a refresh or a
+    // shared link lands on the same page. It starts from whatever the URL says.
+    const [page, setPage] = React.useState(() => Number(searchParams.get("page")) || 1);
+    const [searchInput, setSearchInput] = React.useState(initialSearch);
     const [data, setData] = React.useState<CompanyListResponse | null>(null);
     const [status, setStatus] = React.useState<"loading" | "ready" | "error">("loading");
     const [reloadKey, setReloadKey] = React.useState(0);
-    
+
+    // Build a new URL for this page, keeping the other query bits (like ?search)
+    // that are already there. Reads the live URL each time, so it is never stale.
+    const hrefForPage = React.useCallback(
+        (next: number) => {
+            const params = new URLSearchParams(window.location.search);
+            if (next > 1) params.set("page", String(next));
+            else params.delete("page"); // page 1 is the clean default, no ?page=1
+            const qs = params.toString();
+            return qs ? `${pathname}?${qs}` : pathname;
+        },
+        [pathname]
+    );
+
+    // Next/Previous: a real history entry, so the browser Back button steps
+    // back through the pages you visited.
+    function goToPage(next: number) {
+        router.push(hrefForPage(next));
+    }
+
+    // Filters and search send you back to page 1. That is not worth a history
+    // entry, so it replaces the current one and just drops the ?page.
+    const resetToFirstPage = React.useCallback(() => {
+        setPage(1);
+        router.replace(hrefForPage(1));
+    }, [router, hrefForPage]);
+
+    // When the URL's page changes - from goToPage above, or the Back/Forward
+    // buttons - copy it into state so the list reloads to match.
     React.useEffect(() => {
+        const urlPage = Number(searchParams.get("page")) || 1;
+        setPage((current) => (current === urlPage ? current : urlPage));
+    }, [searchParams]);
+
+    // debounce the search box. Skip the very first run so a shared link like
+    // /companies?search=Kivu&page=2 is not reset to page 1 on load.
+    const firstSearchRun = React.useRef(true);
+    React.useEffect(() => {
+        if (firstSearchRun.current) {
+            firstSearchRun.current = false;
+            return;
+        }
         const id = setTimeout(() => {
             setSearch(searchInput.trim());
-            setPage(1);
+            resetToFirstPage();
         }, 350);
         return () => clearTimeout(id);
-    }, [searchInput]);
+    }, [searchInput, resetToFirstPage]);
 
     React.useEffect(() => {
         let active = true;
@@ -97,7 +156,7 @@ export default function CompaniesPage() {
                 ? current.filter((item) => item !== value)
                 : [...current, value]
         );
-        setPage(1);
+        resetToFirstPage();
     }
 
        function resetFilters() {
@@ -109,7 +168,7 @@ export default function CompaniesPage() {
         setWorkMode([]);
         setSchedule([]);
         setAmenity([]);
-        setPage(1);
+        resetToFirstPage();
     }
 
        const hasActiveFilters =
@@ -148,7 +207,7 @@ export default function CompaniesPage() {
           value={industry}
           onChange={(e) => {
             setIndustry(e.target.value);
-            setPage(1);
+            resetToFirstPage();
           }}
           aria-label="Filter by industry"
           className="rounded-control border border-border bg-white px-3.5 py-3 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -165,7 +224,7 @@ export default function CompaniesPage() {
           value={sort}
           onChange={(e) => {
             setSort(e.target.value);
-            setPage(1);
+            resetToFirstPage();
           }}
           aria-label="Sort companies"
           className="rounded-control border border-border bg-white px-3.5 py-3 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -211,8 +270,10 @@ export default function CompaniesPage() {
       </div>
       {status === "ready" && data && (
         <p className= "text-sm text-ink-muted">
-            {data.total} {data.total === 1 ? "company" : "companies"}
-            {hasActiveFilters ? "match your filters" : "listed"}
+            {data.total} {data.total === 1 ? "company" : "companies"}{" "}
+            {hasActiveFilters
+                ? data.total === 1 ? "matches your filters" : "match your filters"
+                : "listed"}
         </p>
         )}
 
@@ -258,7 +319,7 @@ export default function CompaniesPage() {
                 variant="secondary"
                 size="sm"
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => goToPage(Math.max(1, page - 1))}
               >
                 Previous
               </Button>
@@ -269,7 +330,7 @@ export default function CompaniesPage() {
                 variant="secondary"
                 size="sm"
                 disabled={page >= data.total_pages}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => goToPage(page + 1)}
               >
                 Next
               </Button>

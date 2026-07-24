@@ -14,6 +14,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
 import { EmptyState, LoadingState } from "@/components/ui/states";
+import { RedirectToLogin } from "@/components/auth/gates";
 
 // what each category means, in the student's words
 const CATEGORIES: { key: keyof ReviewScores; label: string; hint: string }[] = [
@@ -72,6 +73,8 @@ function NewReviewForm() {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  // the companies this student was accepted at; null while still loading
+  const [placements, setPlacements] = React.useState<number[] | null>(null);
 
   // look up the company's name so the page can say who you're reviewing
   React.useEffect(() => {
@@ -84,19 +87,21 @@ function NewReviewForm() {
     })();
   }, [companyId]);
 
+  // which companies this student may review (approved proof for each)
+  React.useEffect(() => {
+    if (!user || user.role !== "student") return;
+    (async () => {
+      const result = await apiGet("/me/placements");
+      setPlacements(
+        result.ok ? (result.data as { company_ids: number[] }).company_ids : []
+      );
+    })();
+  }, [user]);
+
   // ---------- gating (D6): check who you are before showing the form ----------
   if (isLoading) return <LoadingState label="Checking your account…" />;
 
-  if (!user) {
-    return (
-      <GateCard
-        title="Log in to write a review"
-        text="Reviews are tied to real student accounts, so you need to be logged in first."
-        buttonText="Log in"
-        buttonHref="/login"
-      />
-    );
-  }
+  if (!user) return <RedirectToLogin />;
 
   if (user.role !== "student") {
     return (
@@ -113,7 +118,7 @@ function NewReviewForm() {
         title="Verify your placement first"
         text="Before your review can be trusted, we check that you really interned there. Upload your certificate or offer letter, and once an admin approves it you can review."
         buttonText="Upload proof of placement"
-        buttonHref="/verify"
+        buttonHref={companyId ? `/verify?company=${companyId}` : "/verify"}
       />
     );
   }
@@ -128,6 +133,24 @@ function NewReviewForm() {
             <Link href="/companies">Browse companies</Link>
           </Button>
         }
+      />
+    );
+  }
+
+  // still finding out which companies you were accepted at
+  if (placements === null) {
+    return <LoadingState label="Checking your placement…" />;
+  }
+
+  // you can only review a company you actually interned at and were verified
+  // for, so a review is offered nowhere else
+  if (!placements.includes(companyId)) {
+    return (
+      <GateCard
+        title="You weren't accepted at this company"
+        text="You can only review a company you interned at and were verified for. Upload your proof of placement for this company, and once an admin approves it you can leave a review."
+        buttonText="Upload proof of placement"
+        buttonHref={`/verify?company=${companyId}`}
       />
     );
   }
@@ -163,7 +186,7 @@ function NewReviewForm() {
       return;
     }
 
-    // done — show them their submission with its pending status
+    // done - show them their submission with its pending status
     router.push("/my-reviews");
   }
 

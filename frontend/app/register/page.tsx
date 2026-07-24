@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiPost } from "@/lib/api";
 import { validateRegisterForm } from "@/lib/validation";
+import { PasswordInput } from "@/components/ui/password-input";
 
 function inputClass(hasError: boolean) {
   const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
@@ -108,10 +109,9 @@ async function handleSubmit(e: React.FormEvent) {
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             value={formData.password}
             onChange={handleChange}
             className={inputClass(!!errors.password)}
@@ -123,10 +123,9 @@ async function handleSubmit(e: React.FormEvent) {
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
             Confirm password
           </label>
-          <input
+          <PasswordInput
             id="confirmPassword"
             name="confirmPassword"
-            type="password"
             value={formData.confirmPassword}
             onChange={handleChange}
             className={inputClass(!!errors.confirmPassword)}

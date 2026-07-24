@@ -3,11 +3,33 @@ import Link from "next/link";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 
+// "company_owner" reads better as "Company owner" on screen
+const ROLE_LABELS: Record<string, string> = {
+  student: "Student",
+  company_owner: "Company owner",
+  admin: "Admin",
+};
+
+function roleLabel(role: string) {
+  return ROLE_LABELS[role] ?? role;
+}
+
 export default function AccountPage() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) return <p className="text-center py-10">Loading...</p>;
-  if (!user) return <p className="text-center py-10">Please log in to view your account.</p>;
+  // Middleware already sends logged-out visitors to /login, so this only shows
+  // in the rare case of an expired session - point them at logging in again.
+  if (!user) {
+    return (
+      <div className="max-w-lg mx-auto py-16 text-center space-y-3">
+        <p className="text-ink-secondary">Please log in to view your account.</p>
+        <Button asChild size="sm">
+          <Link href="/login?from=/account">Log in</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto py-10 px-4">
@@ -15,11 +37,16 @@ export default function AccountPage() {
       <div className="space-y-3">
         <p><span className="font-semibold">Name:</span> {user.name}</p>
         <p><span className="font-semibold">Email:</span> {user.email}</p>
-        <p><span className="font-semibold">Role:</span> {user.role}</p>
-        <p>
-          <span className="font-semibold">Verification status:</span>{" "}
-          {user.is_verified ? "Verified intern" : "Not yet verified"}
-        </p>
+        <p><span className="font-semibold">Role:</span> {roleLabel(user.role)}</p>
+        {/* Verification is the "I really did this internship" proof, so it only
+            means anything for a student. An admin or company owner has no such
+            status, and showing one read as a contradiction. */}
+        {user.role === "student" && (
+          <p>
+            <span className="font-semibold">Verification status:</span>{" "}
+            {user.is_verified ? "Verified intern" : "Not yet verified"}
+          </p>
+        )}
       </div>
 
       {user.role === "student" && (

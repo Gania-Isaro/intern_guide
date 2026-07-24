@@ -21,9 +21,6 @@ def _upload_folder():
 def upload_proof():
     user = g.current_user
 
-    if user["is_verified"]:
-        return jsonify(error="account already verified"), 400
-    
     company_id = request.form.get("company_id", type=int)
     if company_id is None:
         return jsonify(error="company_id is required"), 400
@@ -46,13 +43,20 @@ def upload_proof():
     cursor.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
     if cursor.fetchone() is None:
         return jsonify(error="company not found"), 404
-    
+
+    # Verification is per company, so a student can prove a placement at more
+    # than one company. A rejected proof does not block trying again here, but
+    # an approved or still-pending one for THIS company does.
     cursor.execute(
-        "SELECT id FROM verification_proofs WHERE user_id = %s AND status = 'pending'",
-        (user["id"],),
+        "SELECT status FROM verification_proofs"
+        " WHERE user_id = %s AND company_id = %s AND status IN ('pending', 'approved')",
+        (user["id"], company_id),
     )
-    if cursor.fetchone() is not None:
-        return jsonify(error="you already have a pending verification proof"), 409
+    existing = cursor.fetchone()
+    if existing is not None:
+        if existing["status"] == "approved":
+            return jsonify(error="you are already verified at this company"), 409
+        return jsonify(error="you already have a pending proof for this company"), 409
     
     folder = _upload_folder()
     os.makedirs(folder, exist_ok=True)

@@ -1,36 +1,68 @@
-"use client"; // needs useState for the mobile menu toggle
+"use client"; // needs useState for the mobile menu and the account menu
 
 import * as React from "react";
-import Link from "next/link"; // Next.js's fast-navigation version of <a>
-import { ShieldCheck, Menu, X } from "lucide-react";
+import Link from "next/link";
+import { ShieldCheck, Menu, X, ChevronDown } from "lucide-react";
 
-import { useAuth } from "@/components/providers/auth-provider";
+import { useAuth, type AuthUser } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-// The main navigation links, kept in one list so adding a new link
-// later just means adding one line here
-const NAV_LINKS = [
+// The links everyone sees, logged in or not
+const PUBLIC_LINKS = [
   { label: "Companies", href: "/companies" },
   { label: "How it works", href: "/how-it-works" },
   { label: "For employers", href: "/employers" },
 ];
 
-// Extra links that depend on who is logged in (from the
-// session-awareness work) — admin, company owner, or student
-function getRoleLinks(role?: string, isVerified?: boolean) {
-  if (!role) return [];
-  if (role === "admin") return [{ label: "Admin", href: "/admin" }];
-  if (role === "company_owner") return [{ label: "My Company", href: "/company" }];
-  return isVerified
-    ? [{ label: "My Reviews", href: "/dashboard" }]
-    : [{ label: "Dashboard", href: "/dashboard" }];
+/** The links that belong to this person's account.
+ *
+ * They live in the account menu rather than the main bar, because each role
+ * has three or four of them and putting them all in a row made the header
+ * unreadable. Everything a role can reach is listed here, so nothing is
+ * reachable only by typing the address by hand.
+ */
+function accountLinks(user: AuthUser) {
+  if (user.role === "admin") {
+    return [
+      { label: "Moderation queue", href: "/admin" },
+      { label: "Manage companies", href: "/admin/companies" },
+      { label: "My account", href: "/account" },
+    ];
+  }
+
+  if (user.role === "company_owner") {
+    return [
+      { label: "My company", href: "/owner" },
+      { label: "Register a business", href: "/owner/register" },
+      { label: "My account", href: "/account" },
+    ];
+  }
+
+  // students: a verified one can write reviews, an unverified one gets
+  // pointed at the step that unlocks it.
+  // "Write a review" goes to the company list, because a review is always
+  // about one company - you pick it there, then its page opens the form.
+  return user.is_verified
+    ? [
+        { label: "Write a review", href: "/companies" },
+        { label: "My reviews", href: "/my-reviews" },
+        { label: "My account", href: "/account" },
+      ]
+    : [
+        { label: "Get verified", href: "/verify" },
+        { label: "My reviews", href: "/my-reviews" },
+        { label: "My account", href: "/account" },
+      ];
 }
 
 function Navbar() {
   const [open, setOpen] = React.useState(false); // is the mobile menu open?
+  const [menuOpen, setMenuOpen] = React.useState(false); // is the account menu open?
   const { user, isLoading, logout } = useAuth(); // who is signed in right now
-  const roleLinks = getRoleLinks(user?.role, user?.is_verified);
+
+  const links = user ? accountLinks(user) : [];
+  const firstName = user ? user.name.split(" ")[0] : "";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white">
@@ -44,9 +76,9 @@ function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop links — hidden on mobile (md:flex) */}
+        {/* Desktop links - hidden on mobile (md:flex) */}
         <nav className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => (
+          {PUBLIC_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -57,24 +89,58 @@ function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop auth area — changes depending on login state */}
+        {/* Desktop auth area - changes depending on login state */}
         <div className="hidden items-center gap-3 md:flex">
           {isLoading ? (
             <span className="text-[14.5px] text-ink-muted">Loading…</span>
           ) : user ? (
             <>
-              {roleLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-[14.5px] font-semibold text-ink-secondary hover:text-ink"
+              {/* the account menu holds every link for this person, so nothing
+                  is repeated as a separate button in the bar */}
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="flex items-center gap-1.5 rounded-control border border-border px-3 py-2 text-[14.5px] font-semibold text-ink hover:bg-paper"
                 >
-                  {link.label}
-                </Link>
-              ))}
-              <Button variant="secondary" size="sm" onClick={() => logout()}>
-                Log out
-              </Button>
+                  {firstName}
+                  <ChevronDown className="h-4 w-4 text-ink-muted" />
+                </button>
+
+                {menuOpen && (
+                  <>
+                    {/* invisible sheet behind the menu: clicking anywhere closes it */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 z-50 mt-2 w-56 rounded-card border border-border bg-white py-2 shadow-soft">
+                      <p className="px-4 pb-2 text-sm text-ink-muted">{user.email}</p>
+                      {links.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setMenuOpen(false)}
+                          className="block px-4 py-2 text-[14.5px] text-ink-secondary hover:bg-paper hover:text-ink"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                      <button
+                        type="button"
+                        className="mt-1 block w-full border-t border-border px-4 pb-1 pt-3 text-left text-[14.5px] text-ink-secondary hover:text-ink"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          logout();
+                        }}
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -88,7 +154,7 @@ function Navbar() {
           )}
         </div>
 
-        {/* Hamburger icon — mobile only */}
+        {/* Hamburger icon - mobile only */}
         <button
           type="button"
           className="inline-flex h-10 w-10 items-center justify-center rounded-control md:hidden"
@@ -99,9 +165,10 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile dropdown menu — only shows when open is true */}
+      {/* Mobile dropdown menu - only shows when open is true.
+          No account menu here: on a phone there is room to list everything. */}
       <nav className={cn("flex flex-col gap-1 border-t border-border px-6 pb-4 pt-2 md:hidden", open ? "block" : "hidden")}>
-        {NAV_LINKS.map((link) => (
+        {PUBLIC_LINKS.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -113,7 +180,8 @@ function Navbar() {
         ))}
         {user ? (
           <>
-            {roleLinks.map((link) => (
+            <p className="px-2 pb-1 pt-3 text-label text-ink-muted">{user.email}</p>
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -135,13 +203,22 @@ function Navbar() {
             </button>
           </>
         ) : (
-          <Link
-            href="/register"
-            className="mt-2 rounded-control bg-primary px-2 py-2.5 text-center font-display text-[15px] font-medium text-white"
-            onClick={() => setOpen(false)}
-          >
-            Create account
-          </Link>
+          <>
+            <Link
+              href="/login"
+              className="mt-2 rounded-control border border-border px-2 py-2.5 text-center font-display text-[15px] font-medium text-ink"
+              onClick={() => setOpen(false)}
+            >
+              Log in
+            </Link>
+            <Link
+              href="/register"
+              className="mt-2 rounded-control bg-primary px-2 py-2.5 text-center font-display text-[15px] font-medium text-white"
+              onClick={() => setOpen(false)}
+            >
+              Create account
+            </Link>
+          </>
         )}
       </nav>
     </header>

@@ -5,7 +5,20 @@ import { useRouter } from "next/navigation";
 import { apiPost } from "@/lib/api";
 import { validateLoginForm } from "@/lib/validation";
 import { useAuth } from "@/components/providers/auth-provider";
+import { PasswordInput } from "@/components/ui/password-input";
   
+
+// Where to go after logging in. Middleware adds ?from=/owner when it bounces a
+// logged-out person, so we send them back there. Only our own paths are allowed
+// ("/something", but not "//evil.com"), so this can't be used to redirect a
+// user off to another site.
+function safeReturnPath() {
+  const from = new URLSearchParams(window.location.search).get("from");
+  if (from && from.startsWith("/") && !from.startsWith("//")) {
+    return from;
+  }
+  return "/";
+}
 
 function inputClass(hasError: boolean) {
  const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
@@ -52,7 +65,7 @@ export default function LoginPage() {
     }
 
     await refetch(); // reload /auth/me so the navbar shows the user immediately
-    router.push("/");
+    router.push(safeReturnPath());
   }
 
   return (
@@ -89,10 +102,9 @@ export default function LoginPage() {
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             value={formData.password}
             onChange={handleChange}
             className={inputClass(!!errors.password)}
