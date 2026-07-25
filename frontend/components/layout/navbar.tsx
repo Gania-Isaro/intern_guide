@@ -1,30 +1,34 @@
-"use client"; // needs useState for the mobile menu and the account menu
+"use client"; // needs useState for the mobile menu
 
 import * as React from "react";
 import Link from "next/link";
-import { ShieldCheck, Menu, X, ChevronDown } from "lucide-react";
+import { ShieldCheck, Menu, X } from "lucide-react";
 
 import { useAuth, type AuthUser } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-// The links everyone sees, logged in or not
+// The links shown when nobody is logged in.
 const PUBLIC_LINKS = [
   { label: "Companies", href: "/companies" },
   { label: "How it works", href: "/how-it-works" },
   { label: "For employers", href: "/employers" },
 ];
 
-/** The links that belong to this person's account.
+/** The links a logged-in person sees.
  *
- * They live in the account menu rather than the main bar, because each role
- * has three or four of them and putting them all in a row made the header
- * unreadable. Everything a role can reach is listed here, so nothing is
- * reachable only by typing the address by hand.
+ * These REPLACE the public links: the bar shows one set at a time (public
+ * when logged out, this set once logged in) so it never gets crowded. Every
+ * list starts with "Companies" so a signed-in user can still browse them.
+ * Everything a role can reach is listed here, so nothing is reachable only
+ * by typing the address by hand.
  */
 function accountLinks(user: AuthUser) {
+  const companies = { label: "Companies", href: "/companies" };
+
   if (user.role === "admin") {
     return [
+      companies,
       { label: "Moderation queue", href: "/admin" },
       { label: "Manage companies", href: "/admin/companies" },
       { label: "My account", href: "/account" },
@@ -33,36 +37,34 @@ function accountLinks(user: AuthUser) {
 
   if (user.role === "company_owner") {
     return [
+      companies,
       { label: "My company", href: "/owner" },
       { label: "Register a business", href: "/owner/register" },
       { label: "My account", href: "/account" },
     ];
   }
 
-  // students: a verified one can write reviews, an unverified one gets
-  // pointed at the step that unlocks it.
-  // "Write a review" goes to the company list, because a review is always
-  // about one company - you pick it there, then its page opens the form.
-  return user.is_verified
-    ? [
-        { label: "Write a review", href: "/companies" },
-        { label: "My reviews", href: "/my-reviews" },
-        { label: "My account", href: "/account" },
-      ]
-    : [
-        { label: "Get verified", href: "/verify" },
-        { label: "My reviews", href: "/my-reviews" },
-        { label: "My account", href: "/account" },
-      ];
+  // students: "My placements" is the hub for verifying a company and, once
+  // approved, reviewing it - so it replaces the old "Get verified" / "Write a
+  // review" links, which both live inside that page now.
+  return [
+    companies,
+    { label: "My placements", href: "/my-placements" },
+    { label: "My reviews", href: "/my-reviews" },
+    { label: "My account", href: "/account" },
+  ];
 }
+
+// the red "Log out" style, shared by the desktop bar and the mobile menu
+const LOGOUT_CLASS =
+  "rounded-control border border-danger/40 text-danger hover:bg-danger-tint";
 
 function Navbar() {
   const [open, setOpen] = React.useState(false); // is the mobile menu open?
-  const [menuOpen, setMenuOpen] = React.useState(false); // is the account menu open?
   const { user, isLoading, logout } = useAuth(); // who is signed in right now
 
-  const links = user ? accountLinks(user) : [];
-  const firstName = user ? user.name.split(" ")[0] : "";
+  // one set of links: the account set once logged in, the public set otherwise
+  const links = user ? accountLinks(user) : PUBLIC_LINKS;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white">
@@ -78,9 +80,9 @@ function Navbar() {
 
         {/* Desktop links - hidden on mobile (md:flex) */}
         <nav className="hidden items-center gap-8 md:flex">
-          {PUBLIC_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
               className="text-[14.5px] font-semibold text-ink-secondary hover:text-ink"
             >
@@ -89,59 +91,18 @@ function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop auth area - changes depending on login state */}
+        {/* Desktop auth area - Log out when signed in, else the two buttons */}
         <div className="hidden items-center gap-3 md:flex">
           {isLoading ? (
             <span className="text-[14.5px] text-ink-muted">Loading…</span>
           ) : user ? (
-            <>
-              {/* the account menu holds every link for this person, so nothing
-                  is repeated as a separate button in the bar */}
-              <div className="relative">
-                <button
-                  type="button"
-                  aria-expanded={menuOpen}
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className="flex items-center gap-1.5 rounded-control border border-border px-3 py-2 text-[14.5px] font-semibold text-ink hover:bg-paper"
-                >
-                  {firstName}
-                  <ChevronDown className="h-4 w-4 text-ink-muted" />
-                </button>
-
-                {menuOpen && (
-                  <>
-                    {/* invisible sheet behind the menu: clicking anywhere closes it */}
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 z-50 mt-2 w-56 rounded-card border border-border bg-white py-2 shadow-soft">
-                      <p className="px-4 pb-2 text-sm text-ink-muted">{user.email}</p>
-                      {links.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setMenuOpen(false)}
-                          className="block px-4 py-2 text-[14.5px] text-ink-secondary hover:bg-paper hover:text-ink"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                      <button
-                        type="button"
-                        className="mt-1 block w-full border-t border-border px-4 pb-1 pt-3 text-left text-[14.5px] text-ink-secondary hover:text-ink"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          logout();
-                        }}
-                      >
-                        Log out
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
+            <button
+              type="button"
+              onClick={logout}
+              className={cn(LOGOUT_CLASS, "px-3 py-2 text-[14.5px] font-semibold")}
+            >
+              Log out
+            </button>
           ) : (
             <>
               <Button asChild variant="ghost">
@@ -165,12 +126,11 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile dropdown menu - only shows when open is true.
-          No account menu here: on a phone there is room to list everything. */}
+      {/* Mobile dropdown menu - only shows when open is true */}
       <nav className={cn("flex flex-col gap-1 border-t border-border px-6 pb-4 pt-2 md:hidden", open ? "block" : "hidden")}>
-        {PUBLIC_LINKS.map((link) => (
+        {links.map((link) => (
           <Link
-            key={link.href}
+            key={link.label}
             href={link.href}
             className="rounded-control px-2 py-2.5 text-[14.5px] font-semibold text-ink-secondary hover:bg-paper"
             onClick={() => setOpen(false)}
@@ -181,19 +141,9 @@ function Navbar() {
         {user ? (
           <>
             <p className="px-2 pb-1 pt-3 text-label text-ink-muted">{user.email}</p>
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-control px-2 py-2.5 text-[14.5px] font-semibold text-ink-secondary hover:bg-paper"
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
             <button
               type="button"
-              className="mt-2 rounded-control border border-border px-2 py-2.5 text-center font-display text-[15px] font-medium text-ink"
+              className={cn(LOGOUT_CLASS, "mt-2 px-2 py-2.5 text-center font-display text-[15px] font-medium")}
               onClick={() => {
                 setOpen(false);
                 logout();
