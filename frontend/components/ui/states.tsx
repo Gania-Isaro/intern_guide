@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 // Shared empty / loading / error states for the discovery pages (C6).
 // These prop shapes are exactly what app/companies/page.tsx and
-// app/companies/[id]/page.tsx already pass — don't rename props without
+// app/companies/[id]/page.tsx already pass - don't rename props without
 // updating both pages.
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {

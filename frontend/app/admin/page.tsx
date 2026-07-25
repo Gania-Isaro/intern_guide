@@ -7,10 +7,12 @@
 // Approve and a Reject button; a decided item leaves the list right away.
 
 import * as React from "react";
-import Link from "next/link";
+import { FileText } from "lucide-react";
 
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, API_URL } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
+import { AdminTabs } from "@/components/layout/admin-tabs";
+import { NotAllowed, RedirectToLogin } from "@/components/auth/gates";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
@@ -33,21 +35,48 @@ interface PendingReview {
 interface PendingProof {
   id: number;
   file_name: string;
+  file_type: "image" | "pdf";
   created_at: string;
   student_name: string;
   student_email: string;
   company_name: string;
 }
-// a friendly card for every "you can't be here" situation
-function GateCard({ title, text }: { title: string; text: string }) {
+
+// The admin-only URL that serves this proof's file. The auth cookie rides
+// along automatically (same site), so only a logged-in admin can open it.
+function proofFileUrl(id: number) {
+  return `${API_URL}/admin/proofs/${id}/file`;
+}
+
+// The document itself, so the admin can actually read it before deciding.
+// Images show inline; PDFs open in a new tab in the browser's PDF viewer.
+function ProofPreview({ proof }: { proof: PendingProof }) {
+  const url = proofFileUrl(proof.id);
+
+  if (proof.file_type === "pdf") {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-2 rounded-control border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-paper"
+      >
+        <FileText className="h-4 w-4" />
+        Open document (PDF)
+      </a>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-lg py-16 text-center space-y-3">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <p className="text-ink-secondary">{text}</p>
-      <Button asChild variant="secondary" size="sm">
-        <Link href="/">Back to the homepage</Link>
-      </Button>
-    </div>
+    <a href={url} target="_blank" rel="noreferrer" className="block w-fit">
+      {/* a capped preview; click to see it full size in a new tab */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={`Proof from ${proof.student_name}`}
+        className="max-h-64 rounded-control border border-border"
+      />
+    </a>
   );
 }
 export default function AdminPage() {
@@ -84,17 +113,10 @@ export default function AdminPage() {
 
   // ---------- gating: admins only ----------
   if (isLoading) return <LoadingState label="Checking your account…" />;
-  if (!user) {
-    return (
-      <GateCard
-        title="Please log in"
-        text="The moderation queue is only visible to logged-in admins."
-      />
-    );
-  }
+  if (!user) return <RedirectToLogin />;
   if (user.role !== "admin") {
     return (
-      <GateCard
+      <NotAllowed
         title="Admins only"
         text="This page is where admins review submissions. Your account doesn't have access."
       />
@@ -120,13 +142,15 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-10 py-10 px-4">
+    <div className="mx-auto max-w-3xl space-y-8 py-10 px-4">
       <div>
         <h1 className="text-2xl font-bold">Moderation queue</h1>
         <p className="text-ink-secondary">
           Approve what belongs on the site, reject what doesn&apos;t.
         </p>
       </div>
+
+      <AdminTabs />
 
       {/* ---------- pending proofs (people first: they unlock reviewing) ---------- */}
       <section className="space-y-4">
@@ -152,7 +176,7 @@ export default function AdminPage() {
                 {proof.student_email} · claims a placement at{" "}
                 <span className="font-medium">{proof.company_name}</span>
               </p>
-              <p className="text-sm text-ink-secondary">File: {proof.file_name}</p>
+              <ProofPreview proof={proof} />
               <div className="flex gap-2 pt-1">
                 <Button
                   size="sm"

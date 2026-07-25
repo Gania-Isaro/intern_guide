@@ -1,6 +1,6 @@
 import * as React from "react";
 
-// Importing from the same folder — "./navbar" means "navbar.tsx sitting right next to this file"
+// Importing from the same folder - "./navbar" means "navbar.tsx sitting right next to this file"
 import { Navbar } from "./navbar";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";

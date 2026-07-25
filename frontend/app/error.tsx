@@ -17,7 +17,7 @@ export default function GlobalError({
     <div className="mx-auto max-w-lg py-24 px-4 text-center space-y-4">
       <h1 className="text-2xl font-bold">Something went wrong</h1>
       <p className="text-ink-secondary">
-        The page hit an unexpected error. It&apos;s not you — trying again
+        The page hit an unexpected error. It&apos;s not you - trying again
         usually fixes it.
       </p>
       <div className="flex justify-center gap-3 pt-2">

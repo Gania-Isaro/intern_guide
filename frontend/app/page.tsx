@@ -1,11 +1,8 @@
-import { Search, Upload, ShieldCheck, Star } from "lucide-react";
+import Link from "next/link";
+import { Upload, ShieldCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const STATS = [
-  { value: "128", label: "Companies listed" },
-  { value: "312", label: "Verified reviews" },
-  { value: "6", label: "Industries covered" },
-];
+import { HeroSearch } from "@/components/home/hero-search";
+import { HeroStats } from "@/components/home/hero-stats";
 
 const STEPS = [
   {
@@ -69,35 +66,13 @@ export default function HomePage() {
         </h1>
 
         <p className="mt-4 max-w-xl text-muted-foreground">
-          Real reviews from verified interns in Rwanda — mentorship, tasks
+          Real reviews from verified interns in Rwanda - mentorship, tasks
           and learning, rated by people who actually did the work.
         </p>
 
-        <form className="mt-7 flex w-full max-w-lg gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search a company, e.g. Kivu Software"
-              disabled
-              className="w-full rounded-md border border-border py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground disabled:bg-muted"
-            />
-          </div>
-          <Button variant="primary" type="button" disabled>
-            Search
-          </Button>
-        </form>
+        <HeroSearch />
 
-        <div className="mt-9 flex gap-10">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-2xl font-bold text-foreground">
-                {s.value}
-              </div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
-            </div>
-          ))}
-        </div>
+        <HeroStats />
       </section>
 
       <section className="rounded-lg bg-muted px-6 py-14 text-center">
@@ -133,8 +108,8 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-foreground">
             Recently reviewed companies
           </h2>
-          <Button variant="link" size="sm">
-            Browse all companies
+          <Button asChild variant="link" size="sm">
+            <Link href="/companies">Browse all companies</Link>
           </Button>
         </div>
 
@@ -170,8 +145,8 @@ export default function HomePage() {
   <p className="mt-2 text-sm text-muted-foreground">
     Help the next intern choose well a verified review takes five minutes.
   </p>
-  <Button variant="primary" className="mt-6">
-    Write a verified review
+  <Button asChild variant="primary" className="mt-6">
+    <Link href="/reviews/new">Write a verified review</Link>
   </Button>
 </section>
     </div>

@@ -9,7 +9,7 @@ const STEPS = [
   {
     icon: PenLine,
     title: "Share your internship experience",
-    text: "Write an honest review of the company where you interned — mentorship, workload, pay and what you learned.",
+    text: "Write an honest review of the company where you interned - mentorship, workload, pay and what you learned.",
   },
   {
     icon: ShieldCheck,

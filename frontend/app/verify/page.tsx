@@ -14,6 +14,7 @@ import { apiGet, apiUpload } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/states";
+import { RedirectToLogin } from "@/components/auth/gates";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // must match the backend's limit
 const ALLOWED_TYPES = [".pdf", ".png", ".jpg", ".jpeg"];
@@ -43,21 +44,16 @@ export default function VerifyPage() {
     })();
   }, []);
 
+  // a company page can link here as /verify?company=8 to pre-fill the dropdown
+  React.useEffect(() => {
+    const pre = new URLSearchParams(window.location.search).get("company");
+    if (pre) setCompanyId(pre);
+  }, []);
+
   // ---------- who is asking? ----------
   if (isLoading) return <LoadingState label="Checking your account…"/>;
 
-  if (!user) {
-    return (
-      <Card title="Log in first">
-        <p className="text-body text-ink-secondary">
-          You need an account to verify a placement.
-        </p>
-        <Button asChild variant="primary" size="sm">
-          <Link href="/login">Log in</Link>
-        </Button>
-      </Card>
-    );
-  }
+  if (!user) return <RedirectToLogin />;
 
   if (user.role !== "student") {
     return (
@@ -69,18 +65,9 @@ export default function VerifyPage() {
     );
   }
 
-  if (user.is_verified) {
-    return (
-      <Card title="You are already verified">
-        <p className="text-body text-ink-secondary">
-          Your placement was approved — you can write reviews right away.
-        </p>
-        <Button asChild variant="primary" size="sm">
-          <Link href="/companies">Browse companies</Link>
-        </Button>
-      </Card>
-    );
-  }
+  // Note: we do NOT stop already-verified students here. Verification is per
+  // company, so someone verified at one company can still prove a placement at
+  // another one to review it too.
 
   // ---------- proof already sent in this visit ----------
   if (sent) {
@@ -88,7 +75,7 @@ export default function VerifyPage() {
       <Card title="Proof received">
         <p className="text-body text-ink-secondary">
           Thank you! An admin will look at your document. Once it is approved,
-          your account becomes verified and you can write reviews.
+          you can write a review for that company.
         </p>
         <Button asChild variant="secondary" size="sm">
           <Link href="/account">Go to my account</Link>
@@ -159,7 +146,7 @@ export default function VerifyPage() {
         </h1>
         <p className="text-body text-ink-secondary">
           Upload your internship certificate or offer letter. An admin checks
-          it, and the file is deleted after the decision — it is never shown
+          it, and the file is deleted after the decision - it is never shown
           to anyone else.
         </p>
       </header>

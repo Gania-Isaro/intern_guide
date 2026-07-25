@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 
-// The footer's link columns, grouped by topic
+// The footer's link columns, grouped by topic.
+// "#" means the page is not built yet - clicking it keeps you where you are
+// instead of dropping you on a 404.
 const LINK_COLUMNS = [
   {
     title: "Product",
@@ -14,16 +16,16 @@ const LINK_COLUMNS = [
   {
     title: "Team",
     links: [
-      { label: "About THE GRID", href: "/about" },
-      { label: "Contact", href: "/contact" },
+      { label: "About THE GRID", href: "#" },
+      { label: "Contact", href: "#" },
       { label: "GitHub", href: "https://github.com/Gania-Isaro/intern_guide" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
+      { label: "Privacy", href: "#" },
+      { label: "Terms", href: "#" },
     ],
   },
 ];
@@ -45,7 +47,7 @@ function Footer() {
               </span>
             </div>
             <p className="text-[14px] leading-[22px] text-ink-secondary">
-              Verified internship reviews — by interns,
+              Verified internship reviews - by interns,
               <br />
               for interns.
             </p>
@@ -57,7 +59,8 @@ function Footer() {
               <div key={col.title} className="flex flex-col gap-3">
                 <p className="text-label text-ink">{col.title}</p>
                 {col.links.map((link) => (
-                  <Link key={link.href} href={link.href} className="text-[14px] text-ink-secondary hover:text-ink">
+                  // keyed by label, because several links now share the href "#"
+                  <Link key={link.label} href={link.href} className="text-[14px] text-ink-secondary hover:text-ink">
                     {link.label}
                   </Link>
                 ))}

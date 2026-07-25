@@ -11,9 +11,9 @@ export default function EmployersPage() {
         interns who have worked with you.
       </p>
       <ul className="flex flex-col gap-2 text-body text-ink-secondary">
-        <li>— Claim and manage your company profile</li>
-        <li>— See how past interns rate mentorship, workload and pay</li>
-        <li>— Build trust with the next group of applicants</li>
+        <li>- Claim and manage your company profile</li>
+        <li>- See how past interns rate mentorship, workload and pay</li>
+        <li>- Build trust with the next group of applicants</li>
       </ul>
       <div>
         <Button asChild variant="primary">

@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 type ApiResult =
   | { ok: true; data: unknown }
@@ -29,6 +29,26 @@ export async function apiPost(
     return { ok: false, error: "Could not reach the server. Please try again later." };
   }
 }
+// Used for the admin's permanent delete. Same shape as apiPost, no body.
+export async function apiDelete(endpoint: string): Promise<ApiResult> {
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { ok: false, error: data.error || "Something went wrong. Please try again." };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again later." };
+  }
+}
+
 export async function apiGet(
   endpoint: string,
   params: Record<string, string | number | undefined> = {}

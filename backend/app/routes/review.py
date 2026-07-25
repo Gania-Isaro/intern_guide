@@ -15,6 +15,26 @@ bp = Blueprint("review", __name__)
 # the four things a student scores, 1-5 stars each
 CATEGORIES = ("mentorship", "tasks", "learning", "environment")
 
+# Two optional questions at the bottom of the review form. They are only ever
+# shown added up on the company's charts, and the charts hide themselves when
+# too few people answered, one reviewer can never be picked out.
+GENDERS = ("female", "male", "other", "prefer_not_to_say")
+
+
+def _optional_gender(value):
+    """Whatever the form sent, or None when it was skipped or unrecognised."""
+    text = (value or "").strip()
+    return text if text in GENDERS else None
+
+
+def _optional_year(value):
+    """The year the student interned, if it is a sensible one."""
+    text = str(value).strip() if value is not None else ""
+    if not text.isdigit():
+        return None
+    year = int(text)
+    return year if 2000 <= year <= 2100 else None
+
 
 @bp.post("/reviews")
 @verified_required  # only students whose placement was verified can review
@@ -41,7 +61,20 @@ def create_review():
     cursor.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
     if cursor.fetchone() is None:
         return jsonify(error="company not found"), 404
-    
+
+    # A student may only review a company they were actually accepted at, shown
+    # by an approved verification proof for THIS company. Being verified in
+    # general is not enough, the proof has to be for this exact company.
+    cursor.execute(
+        "SELECT id FROM verification_proofs"
+        " WHERE user_id = %s AND company_id = %s AND status = 'approved'",
+        (g.current_user["id"], company_id),
+    )
+    if cursor.fetchone() is None:
+        return jsonify(
+            error="you can only review a company you were accepted at"
+        ), 403
+
     # one review per user per company
     cursor.execute(
         "SELECT id FROM reviews WHERE user_id = %s AND company_id = %s",
@@ -55,8 +88,9 @@ def create_review():
 
     cursor.execute(
         "INSERT INTO reviews"
-        " (company_id, user_id, mentorship, tasks, learning, environment, rating, comment)"
-        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        " (company_id, user_id, mentorship, tasks, learning, environment, rating,"
+        "  comment, gender, intern_year)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (
             company_id,
             g.current_user["id"],
@@ -65,7 +99,10 @@ def create_review():
             scores["learning"],
             scores["environment"],
             rating,
-            comment
+            comment,
+            # both skippable: a blank or odd answer is stored as "not said"
+            _optional_gender(data.get("gender")),
+            _optional_year(data.get("intern_year")),
         ),
     )
     get_db().commit()
@@ -75,7 +112,7 @@ def create_review():
             id=cursor.lastrowid,
             rating=rating,
             status="pending",
-            message="review submitted — an admin will check it before it goes live",
+            message="review submitted - an admin will check it before it goes live",
         ),
         201,
     )
@@ -142,6 +179,26 @@ def my_reviews():
         review["created_at"] = review["created_at"].isoformat()
 
     return jsonify(reviews=reviews)
+
+
+# ---------- the companies this student is allowed to review ----------
+
+@bp.get("/me/placements")
+@role_required("student")
+def my_placements():
+    """The ids of companies this student was accepted at (approved proof).
+
+    The review form uses this to offer a review only where it is allowed,
+    instead of letting the student fill it in and then hit a 403.
+    """
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT DISTINCT company_id FROM verification_proofs"
+        " WHERE user_id = %s AND status = 'approved'",
+        (g.current_user["id"],),
+    )
+    company_ids = [row["company_id"] for row in cursor.fetchall()]
+    return jsonify(company_ids=company_ids)
 
 
 # ---------- F3: a company owner replies to a review ----------

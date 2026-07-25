@@ -21,9 +21,9 @@ The repo already has `backend/Procfile` and gunicorn in
 | Variable | What it is |
 |---|---|
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | the MySQL instance from step 1 |
-| `SECRET_KEY` | a long random string — generate one with `python3 -c "import secrets; print(secrets.token_hex(32))"`. NEVER the example value: it signs the login tokens |
-| `FRONTEND_ORIGIN` | the exact frontend URL (e.g. `https://internguide.vercel.app`) — CORS allows only this origin |
-| `UPLOAD_ROOT` | a writable folder for proof uploads (e.g. `/data/uploads`) — the code folder may be read-only in production |
+| `SECRET_KEY` | a long random string - generate one with `python3 -c "import secrets; print(secrets.token_hex(32))"`. NEVER the example value: it signs the login tokens |
+| `FRONTEND_ORIGIN` | the exact frontend URL (e.g. `https://internguide.vercel.app`) - CORS allows only this origin |
+| `UPLOAD_ROOT` | a writable folder for proof uploads (e.g. `/data/uploads`) - the code folder may be read-only in production |
 
 Start command (the Procfile does this): `gunicorn "app:create_app()"` from
 the `backend/` directory.
@@ -48,10 +48,10 @@ the `backend/` directory.
 
 ## Gotchas we already hit in development
 
-- Flask must NOT run with `debug=True` in production — gunicorn ignores
+- Flask must NOT run with `debug=True` in production - gunicorn ignores
   `run.py`, so this is handled, just never point the host at `run.py`.
 - If uploads fail in production, `UPLOAD_ROOT` is missing or not
-  writable — that variable exists precisely for this.
+  writable - that variable exists precisely for this.
 - If login works but every page thinks you're logged out, the cookie is
   being blocked: `FRONTEND_ORIGIN` must match the real frontend URL
   exactly (scheme included), and both sites must be HTTPS.

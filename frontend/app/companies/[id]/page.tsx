@@ -5,10 +5,19 @@ import Link from "next/link";
 import { ShieldCheck, MapPin, Globe, Briefcase, CalendarClock } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { type Company } from "@/components/company/company-card";
+import { CompanyCharts } from "@/components/company/company-charts";
+import {
+  AMENITY_LABELS,
+  SCHEDULE_LABELS,
+  WORK_MODE_LABELS,
+  labelFor,
+  payLine,
+} from "@/lib/labels";
 
 interface Internship {
   id: number;
@@ -17,6 +26,16 @@ interface Internship {
   location: string | null;
   deadline: string | null;
   is_active: boolean;
+  compensation: string;
+  stipend_amount: number | null;
+  stipend_currency: string | null;
+  stipend_period: string | null;
+  work_mode: string;
+  schedule: string;
+  duration_months: number | null;
+  start_date: string | null;
+  openings: number;
+  field: string | null;
 }
 
 interface Review {
@@ -36,6 +55,20 @@ interface Review {
 interface CompanyDetail extends Company {
   internships: Internship[];
   reviews: Review[];
+  google_address: string | null;
+  size: string | null;
+  founded_year: number | null;
+  amenities: string[];
+}
+
+// A small grey pill. Used for the perks and for the pay/place/hours tags on
+// each internship, so they all look the same.
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-chip bg-paper px-2.5 py-1 text-sm text-ink-secondary">
+      {children}
+    </span>
+  );
 }
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -53,11 +86,30 @@ export default function CompanyProfilePage({
 }) {
   const { id } = React.use(params);
 
+  const { user } = useAuth();
+
   const [company, setCompany] = React.useState<CompanyDetail | null>(null);
   const [status, setStatus] = React.useState<
     "loading" | "ready" | "error" | "not-found"
   >("loading");
   const [reloadKey, setReloadKey] = React.useState(0);
+  // may the person looking at this page review THIS company? Only a student
+  // with an approved proof for it can, so the button shows nowhere else.
+  const [canReview, setCanReview] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user || user.role !== "student") {
+      setCanReview(false);
+      return;
+    }
+    (async () => {
+      const result = await apiGet("/me/placements");
+      if (result.ok) {
+        const ids = (result.data as { company_ids: number[] }).company_ids;
+        setCanReview(ids.includes(Number(id)));
+      }
+    })();
+  }, [user, id]);
 
   // fetch on id / reload change, in an async closure so nothing is set
   // synchronously in the effect body
@@ -158,16 +210,62 @@ export default function CompanyProfilePage({
           ) : (
             <p className="text-sm text-ink-muted">No reviews yet</p>
           )}
-          <Button asChild variant="primary">
-            <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
-          </Button>
+          {canReview ? (
+            <Button asChild variant="primary">
+              <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
+            </Button>
+          ) : user?.role === "student" ? (
+            // a student who has not proved a placement here yet: point them at
+            // uploading proof, with this company already chosen
+            <Button asChild variant="secondary">
+              <Link href={`/verify?company=${company.id}`}>Verify your placement here</Link>
+            </Button>
+          ) : null}
         </div>
       </header>
       {/* --- about --- */}
-      {company.description && (
+      {(company.description || company.size || company.founded_year) && (
         <section className="space-y-3">
           <h2 className="text-card-title text-ink">About</h2>
-          <p className="max-w-3xl text-body text-ink-secondary">{company.description}</p>
+          {company.description && (
+            <p className="max-w-3xl text-body text-ink-secondary">{company.description}</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {company.size && <Tag>{company.size} people</Tag>}
+            {company.founded_year && <Tag>Founded {company.founded_year}</Tag>}
+          </div>
+        </section>
+      )}
+
+      {/* --- what they offer interns --- */}
+      {company.amenities.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-card-title text-ink">What they offer interns</h2>
+          <div className="flex flex-wrap gap-2">
+            {company.amenities.map((amenity) => (
+              <Tag key={amenity}>{labelFor(AMENITY_LABELS, amenity)}</Tag>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* --- where they are --- */}
+      {company.google_address && (
+        <section className="space-y-3">
+          <h2 className="text-card-title text-ink">Where they are</h2>
+          <p className="text-body text-ink-secondary">{company.google_address}</p>
+          {/* Google's own embed URL. It needs no API key, so there is no key to
+              leak and nothing to pay for - the address is simply handed over as
+              a search. encodeURIComponent keeps commas and spaces safe. */}
+          <iframe
+            title={`Map showing ${company.name}`}
+            src={`https://www.google.com/maps?q=${encodeURIComponent(
+              company.google_address
+            )}&output=embed`}
+            className="h-72 w-full rounded-card border border-border"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </section>
       )}
 
@@ -196,6 +294,16 @@ export default function CompanyProfilePage({
                     )}
                   </div>
                 </div>
+
+                {/* the three things a student checks first: does it pay, where
+                    is it, and how many hours */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Tag>{payLine(role)}</Tag>
+                  <Tag>{labelFor(WORK_MODE_LABELS, role.work_mode)}</Tag>
+                  <Tag>{labelFor(SCHEDULE_LABELS, role.schedule)}</Tag>
+                  {role.duration_months && <Tag>{role.duration_months} months</Tag>}
+                  {role.field && <Tag>{role.field}</Tag>}
+                </div>
                 {role.description && (
                   <p className="mt-3 line-clamp-3 text-body text-ink-secondary">
                     {role.description}
@@ -212,6 +320,13 @@ export default function CompanyProfilePage({
           </div>
         )}
       </section>
+
+      {/* --- the numbers behind the reviews --- */}
+      <section className="space-y-4">
+        <h2 className="text-card-title text-ink">What the reviews add up to</h2>
+        <CompanyCharts companyId={company.id} />
+      </section>
+
        {/* --- reviews --- */}
       <section className="space-y-4">
         <h2 className="text-card-title text-ink">
@@ -223,9 +338,15 @@ export default function CompanyProfilePage({
             title="No reviews yet"
             description="Be the first verified intern to review this company."
             action={
-              <Button asChild variant="secondary" size="sm">
-                <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
-              </Button>
+              canReview ? (
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
+                </Button>
+              ) : user?.role === "student" ? (
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/verify?company=${company.id}`}>Verify your placement to review</Link>
+                </Button>
+              ) : undefined
             }
           />
         ) : (

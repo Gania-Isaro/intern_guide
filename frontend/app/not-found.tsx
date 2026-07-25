@@ -11,7 +11,7 @@ export default function NotFound() {
       <p className="text-sm font-semibold text-primary">404</p>
       <h1 className="text-2xl font-bold">This page doesn&apos;t exist</h1>
       <p className="text-ink-secondary">
-        The link may be old, or the address was mistyped. Nothing is broken —
+        The link may be old, or the address was mistyped. Nothing is broken -
         the page just isn&apos;t here.
       </p>
       <div className="flex justify-center gap-3 pt-2">

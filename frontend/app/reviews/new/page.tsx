@@ -14,6 +14,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
 import { EmptyState, LoadingState } from "@/components/ui/states";
+import { RedirectToLogin } from "@/components/auth/gates";
 
 // what each category means, in the student's words
 const CATEGORIES: { key: keyof ReviewScores; label: string; hint: string }[] = [
@@ -65,9 +66,15 @@ function NewReviewForm() {
     environment: 0,
   });
   const [comment, setComment] = React.useState("");
+  // Two optional questions. Blank is a perfectly valid answer and the API
+  // stores it as "not said", so neither one is ever required to submit.
+  const [gender, setGender] = React.useState("");
+  const [internYear, setInternYear] = React.useState("");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  // the companies this student was accepted at; null while still loading
+  const [placements, setPlacements] = React.useState<number[] | null>(null);
 
   // look up the company's name so the page can say who you're reviewing
   React.useEffect(() => {
@@ -80,19 +87,21 @@ function NewReviewForm() {
     })();
   }, [companyId]);
 
+  // which companies this student may review (approved proof for each)
+  React.useEffect(() => {
+    if (!user || user.role !== "student") return;
+    (async () => {
+      const result = await apiGet("/me/placements");
+      setPlacements(
+        result.ok ? (result.data as { company_ids: number[] }).company_ids : []
+      );
+    })();
+  }, [user]);
+
   // ---------- gating (D6): check who you are before showing the form ----------
   if (isLoading) return <LoadingState label="Checking your account…" />;
 
-  if (!user) {
-    return (
-      <GateCard
-        title="Log in to write a review"
-        text="Reviews are tied to real student accounts, so you need to be logged in first."
-        buttonText="Log in"
-        buttonHref="/login"
-      />
-    );
-  }
+  if (!user) return <RedirectToLogin />;
 
   if (user.role !== "student") {
     return (
@@ -109,7 +118,7 @@ function NewReviewForm() {
         title="Verify your placement first"
         text="Before your review can be trusted, we check that you really interned there. Upload your certificate or offer letter, and once an admin approves it you can review."
         buttonText="Upload proof of placement"
-        buttonHref="/verify"
+        buttonHref={companyId ? `/verify?company=${companyId}` : "/verify"}
       />
     );
   }
@@ -124,6 +133,24 @@ function NewReviewForm() {
             <Link href="/companies">Browse companies</Link>
           </Button>
         }
+      />
+    );
+  }
+
+  // still finding out which companies you were accepted at
+  if (placements === null) {
+    return <LoadingState label="Checking your placement…" />;
+  }
+
+  // you can only review a company you actually interned at and were verified
+  // for, so a review is offered nowhere else
+  if (!placements.includes(companyId)) {
+    return (
+      <GateCard
+        title="You weren't accepted at this company"
+        text="You can only review a company you interned at and were verified for. Upload your proof of placement for this company, and once an admin approves it you can leave a review."
+        buttonText="Upload proof of placement"
+        buttonHref={`/verify?company=${companyId}`}
       />
     );
   }
@@ -149,6 +176,8 @@ function NewReviewForm() {
       company_id: companyId,
       ...scores,
       comment: comment.trim(),
+      gender,
+      intern_year: internYear,
     });
     setIsSubmitting(false);
 
@@ -157,7 +186,7 @@ function NewReviewForm() {
       return;
     }
 
-    // done — show them their submission with its pending status
+    // done - show them their submission with its pending status
     router.push("/my-reviews");
   }
 
@@ -228,6 +257,53 @@ function NewReviewForm() {
             className="w-full rounded-control border border-border bg-white p-3.5 text-body text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
+
+        {/* optional, and only ever shown added up on the company's charts */}
+        <fieldset className="space-y-3 rounded-card border border-border bg-paper p-4">
+          <legend className="px-1 text-label text-ink">About you (optional)</legend>
+          <p className="text-sm text-ink-secondary">
+            These two answers are never shown next to your review. They only
+            appear as totals on the company&apos;s charts, and only once enough
+            people have answered, so nobody can work out who said what. You can
+            skip both.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="gender" className="text-label text-ink-secondary">
+                Gender
+              </label>
+              <select
+                id="gender"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full rounded-control border border-border bg-white p-3 text-body text-ink"
+              >
+                <option value="">Prefer not to answer</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="intern_year" className="text-label text-ink-secondary">
+                Year you interned
+              </label>
+              <input
+                id="intern_year"
+                type="number"
+                inputMode="numeric"
+                min={2000}
+                max={2100}
+                value={internYear}
+                onChange={(e) => setInternYear(e.target.value)}
+                placeholder="2026"
+                className="w-full rounded-control border border-border bg-white p-3 text-body text-ink placeholder:text-ink-muted"
+              />
+            </div>
+          </div>
+        </fieldset>
 
         {submitError && <p className="text-sm text-danger">{submitError}</p>}
 

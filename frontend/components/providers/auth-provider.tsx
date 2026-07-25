@@ -48,9 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(MOCK_USER);
         return;
       }
+      // /auth/me answers 200 with the user, or 200 with null when nobody is
+      // logged in - so the logged-out case is normal data, not an error.
       const data = await apiFetch("/auth/me");
       setUser(data);
     } catch {
+      // only reached if the backend is unreachable
       setUser(null);
     } finally {
       setIsLoading(false);
