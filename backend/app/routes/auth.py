@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -5,6 +6,7 @@ from flask import Blueprint, current_app, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db
+from ..utils.mailer import send_email
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -13,6 +15,10 @@ ALLOWED_ROLES = ("student", "company_owner")
 
 COOKIE_NAME = "token"
 TOKEN_LIFETIME = timedelta(days=1)
+
+# "forgot password" one-time code settings
+OTP_TTL_MINUTES = 10   # how long a code stays valid
+OTP_MAX_ATTEMPTS = 5   # wrong guesses allowed before the code is burned
 
 
 @bp.post("/register")
@@ -93,6 +99,152 @@ def logout():
     response = jsonify(message="logged out")
     response.delete_cookie(COOKIE_NAME)
     return response
+
+
+@bp.post("/forgot-password")
+def forgot_password():
+    # Step 1 of a reset: the user gives their email and we mail them a code.
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        return jsonify(error="email is required"), 400
+
+    # First check the email really belongs to a user. If not, say so plainly
+    # instead of sending a code, so nobody waits on an email that never comes.
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT id, name FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    if user is None:
+        return jsonify(error="this email is not registered"), 404
+
+    code = f"{secrets.randbelow(1_000_000):06d}"  # e.g. "042317"
+
+    # only one active code per user: clear old ones, then store the new (hashed)
+    cursor.execute("DELETE FROM password_reset_codes WHERE user_id = %s", (user["id"],))
+    cursor.execute(
+        "INSERT INTO password_reset_codes (user_id, code_hash, expires_at)"
+        " VALUES (%s, %s, NOW() + INTERVAL %s MINUTE)",
+        (user["id"], generate_password_hash(code), OTP_TTL_MINUTES),
+    )
+    db.commit()
+
+    try:
+        send_email(
+            email,
+            "Your InternGuide password reset code",
+            f"Hi {user['name']},\n\n"
+            f"Your password reset code is: {code}\n\n"
+            f"It expires in {OTP_TTL_MINUTES} minutes. If you did not ask to reset "
+            f"your password, you can safely ignore this email.\n\n- InternGuide",
+        )
+    except Exception:
+        # The email really did fail to go out. Log the reason (SMTP settings, a
+        # network issue, ...) and tell the user so they can try again.
+        current_app.logger.exception("Could not send password reset email")
+        return jsonify(error="could not send the email, please try again later"), 502
+
+    return jsonify(message="We sent a 6-digit code to your email.")
+
+
+def _check_reset_code(db, cursor, email, code):
+    """Check a reset code without spending it.
+
+    Returns (user_id, code_row, None) when the code is good, or
+    (None, None, error_response) when it is not. Wrong guesses count towards
+    the attempt limit. Used by BOTH the verify step and the final reset step,
+    so the two can never disagree about what a valid code is.
+    """
+    # one wording for every "no good" case, so nothing is revealed
+    bad_code = (jsonify(error="that code is wrong or has expired"), 403)
+
+    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    if user is None:
+        return None, None, bad_code
+
+    cursor.execute(
+        "SELECT id, code_hash, attempts FROM password_reset_codes"
+        " WHERE user_id = %s AND used = FALSE AND expires_at > NOW()"
+        " ORDER BY id DESC LIMIT 1",
+        (user["id"],),
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None, None, bad_code
+
+    # too many wrong guesses: burn this code, they must request a fresh one
+    if row["attempts"] >= OTP_MAX_ATTEMPTS:
+        cursor.execute(
+            "UPDATE password_reset_codes SET used = TRUE WHERE id = %s", (row["id"],)
+        )
+        db.commit()
+        return None, None, (
+            jsonify(error="too many wrong tries, please request a new code"),
+            429,
+        )
+
+    if not check_password_hash(row["code_hash"], code):
+        cursor.execute(
+            "UPDATE password_reset_codes SET attempts = attempts + 1 WHERE id = %s",
+            (row["id"],),
+        )
+        db.commit()
+        return None, None, bad_code
+
+    return user["id"], row, None
+
+
+@bp.post("/verify-reset-code")
+def verify_reset_code():
+    # Step 2 of a reset: check ONLY the code. The code is not spent here, so the
+    # next step can still use it to actually set the new password.
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    code = (data.get("code") or "").strip()
+
+    if not email or not code:
+        return jsonify(error="email and code are required"), 400
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    _, _, error = _check_reset_code(db, cursor, email, code)
+    if error is not None:
+        return error
+
+    return jsonify(message="Code verified. You can now set a new password.")
+
+
+@bp.post("/reset-password")
+def reset_password():
+    # Step 3 of a reset: with a good code, set the new password and spend it.
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    code = (data.get("code") or "").strip()
+    new_password = data.get("new_password") or ""
+
+    if not email or not code or not new_password:
+        return jsonify(error="email, code and new password are required"), 400
+    if len(new_password) < 8:
+        return jsonify(error="password must be at least 8 characters"), 400
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    user_id, row, error = _check_reset_code(db, cursor, email, code)
+    if error is not None:
+        return error
+
+    # correct code: set the new password and mark the code as spent
+    cursor.execute(
+        "UPDATE users SET password_hash = %s WHERE id = %s",
+        (generate_password_hash(new_password), user_id),
+    )
+    cursor.execute(
+        "UPDATE password_reset_codes SET used = TRUE WHERE id = %s", (row["id"],)
+    )
+    db.commit()
+
+    return jsonify(message="Your password has been reset. You can now log in.")
 
 
 @bp.get("/me")
