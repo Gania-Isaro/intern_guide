@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/states";
 
 interface CompanyListResponse {
-    companies: Company[];   
+    companies: Company[];
     page: number;
     per_page: number;
     total: number;
@@ -180,7 +180,7 @@ function CompaniesBrowser() {
         amenity.length > 0;
 
     return (
-    <div className="space-y-8 py-2">
+    <div className="space-y-6 py-2">
       <header className="space-y-2">
         <h1 className="text-heading text-ink">Browse companies</h1>
         <p className="text-body text-ink-secondary">
@@ -189,155 +189,191 @@ function CompaniesBrowser() {
         </p>
       </header>
 
-      {/* --- controls: search + industry + sort --- */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search a company, e.g. Kivu Software"
-            aria-label="Search companies"
-            className="w-full rounded-control border border-border bg-paper py-3 pl-10 pr-3.5 text-body text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          />
-        </div>
-
-        <select
-          value={industry}
-          onChange={(e) => {
-            setIndustry(e.target.value);
-            resetToFirstPage();
-          }}
-          aria-label="Filter by industry"
-          className="rounded-control border border-border bg-white px-3.5 py-3 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="">All industries</option>
-          {INDUSTRIES.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={sort}
-          onChange={(e) => {
-            setSort(e.target.value);
-            resetToFirstPage();
-          }}
-          aria-label="Sort companies"
-          className="rounded-control border border-border bg-white px-3.5 py-3 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-            {SORT_CHOICES.map((choice) => (
-                <option key={choice.value} value={choice.value}>
-                    {choice.label}
-                </option>
-            ))}
-        </select>
-      </div>    
-
-      {/* --- what the internship is actually like --- */}
-      <div className="space-y-4 rounded-card border border-border bg-white p-5 shadow-soft">
-        <FilterGroup
-          title="Pay"
-          labels={COMPENSATION_LABELS}
-          selected={compensation}
-          onToggle={(value) => toggle(compensation, setCompensation, value)}
+      {/* --- search spans the whole top --- */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search a company, e.g. Kivu Software"
+          aria-label="Search companies"
+          className="w-full rounded-control border border-border bg-paper py-3 pl-10 pr-3.5 text-body text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
-        <FilterGroup
-          title="Where"
-          labels={WORK_MODE_LABELS}
-          selected={workMode}
-          onToggle={(value) => toggle(workMode, setWorkMode, value)}
-        />
-        <FilterGroup
-          title="Hours"
-          labels={SCHEDULE_LABELS}
-          selected={schedule}
-          onToggle={(value) => toggle(schedule, setSchedule, value)}
-        />
-        <FilterGroup
-          title="What they offer"
-          labels={AMENITY_LABELS}
-          selected={amenity}
-          onToggle={(value) => toggle(amenity, setAmenity, value)}
-        />
-        <p className="text-sm text-ink-muted">
-          Pay, place and hours belong to a posting, so a company shows up when
-          one of its open internships matches everything you ticked.
-        </p>
       </div>
-      {status === "ready" && data && (
-        <p className= "text-sm text-ink-muted">
-            {data.total} {data.total === 1 ? "company" : "companies"}{" "}
-            {hasActiveFilters
-                ? data.total === 1 ? "matches your filters" : "match your filters"
-                : "listed"}
-        </p>
-        )}
 
-     {status === "loading" && <CompanyGridSkeleton count={6} />}
+      {/* --- two columns: filters on the left, companies on the right --- */}
+      <div className="flex flex-col gap-8 lg:flex-row">
+        {/* ---------- left: the filter sidebar ---------- */}
+        <aside className="lg:w-72 lg:shrink-0">
+          <div className="space-y-5 rounded-card border border-border bg-white p-5 shadow-soft lg:sticky lg:top-24">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-card-title text-ink">Filters</h2>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
 
-      {status === "error" && (
-        <ErrorState
-          description="We couldn't load the companies. Check your connection and try again."
-          onRetry={retry}
-        />
-      )}
+            {/* industry lives at the top of the sidebar as a simple picker */}
+            <div className="space-y-2">
+              <p className="text-label text-ink-secondary">Industry</p>
+              <select
+                value={industry}
+                onChange={(e) => {
+                  setIndustry(e.target.value);
+                  resetToFirstPage();
+                }}
+                aria-label="Filter by industry"
+                className="w-full rounded-control border border-border bg-white px-3 py-2.5 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">All industries</option>
+                {INDUSTRIES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-      {status === "ready" && data && data.companies.length === 0 && (
-        <EmptyState
-          title="No companies found"
-          description={
-            hasActiveFilters
-              ? "No companies match your search and filters. Try broadening them."
-              : "There are no companies listed yet. Check back soon."
-          }
-          action={
-            hasActiveFilters ? (
-              <Button variant="secondary" size="sm" onClick={resetFilters}>
-                Clear filters
-              </Button>
-            ) : undefined
-          }
-        />
-      )}
+            <FilterGroup
+              title="Pay"
+              labels={COMPENSATION_LABELS}
+              selected={compensation}
+              onToggle={(value) => toggle(compensation, setCompensation, value)}
+            />
+            <FilterGroup
+              title="Where"
+              labels={WORK_MODE_LABELS}
+              selected={workMode}
+              onToggle={(value) => toggle(workMode, setWorkMode, value)}
+            />
+            <FilterGroup
+              title="Hours"
+              labels={SCHEDULE_LABELS}
+              selected={schedule}
+              onToggle={(value) => toggle(schedule, setSchedule, value)}
+            />
+            <FilterGroup
+              title="What they offer"
+              labels={AMENITY_LABELS}
+              selected={amenity}
+              onToggle={(value) => toggle(amenity, setAmenity, value)}
+            />
+            <p className="text-sm text-ink-muted">
+              Pay, place and hours belong to a posting, so a company shows up
+              when one of its open internships matches everything you ticked.
+            </p>
+          </div>
+        </aside>
 
-      {status === "ready" && data && data.companies.length > 0 && (
-        <>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {data.companies.map((company) => (
-              <CompanyCard key={company.id} company={company} />
-            ))}
+        {/* ---------- right: the results ---------- */}
+        <div className="min-w-0 flex-1 space-y-6">
+          {/* toolbar: how many results on the left, sort on the right */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-ink-muted">
+              {status === "ready" && data ? (
+                <>
+                  {data.total} {data.total === 1 ? "company" : "companies"}{" "}
+                  {hasActiveFilters
+                    ? data.total === 1
+                      ? "matches your filters"
+                      : "match your filters"
+                    : "listed"}
+                </>
+              ) : (
+                " "
+              )}
+            </p>
+
+            <label className="flex items-center gap-2 text-sm text-ink-secondary">
+              Sort by
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value);
+                  resetToFirstPage();
+                }}
+                aria-label="Sort companies"
+                className="rounded-control border border-border bg-white px-3 py-2 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {SORT_CHOICES.map((choice) => (
+                  <option key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
-          {/* --- pagination (C7) --- */}
-          {data.total_pages > 1 && (
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => goToPage(Math.max(1, page - 1))}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-ink-secondary">
-                Page {data.page} of {data.total_pages}
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= data.total_pages}
-                onClick={() => goToPage(page + 1)}
-              >
-                Next
-              </Button>
-            </div>
+          {status === "loading" && <CompanyGridSkeleton count={6} />}
+
+          {status === "error" && (
+            <ErrorState
+              description="We couldn't load the companies. Check your connection and try again."
+              onRetry={retry}
+            />
           )}
-        </>
-      )}
+
+          {status === "ready" && data && data.companies.length === 0 && (
+            <EmptyState
+              title="No companies found"
+              description={
+                hasActiveFilters
+                  ? "No companies match your search and filters. Try broadening them."
+                  : "There are no companies listed yet. Check back soon."
+              }
+              action={
+                hasActiveFilters ? (
+                  <Button variant="secondary" size="sm" onClick={resetFilters}>
+                    Clear filters
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
+
+          {status === "ready" && data && data.companies.length > 0 && (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {data.companies.map((company) => (
+                  <CompanyCard key={company.id} company={company} />
+                ))}
+              </div>
+
+              {/* --- pagination (C7) --- */}
+              {data.total_pages > 1 && (
+                <div className="flex items-center justify-center gap-4 pt-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(Math.max(1, page - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-ink-secondary">
+                    Page {data.page} of {data.total_pages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={page >= data.total_pages}
+                    onClick={() => goToPage(page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
