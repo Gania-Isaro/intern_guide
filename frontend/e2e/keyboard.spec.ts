@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 
 // Keyboard-operability checks for the bespoke navigation behaviours added for
 // accessibility. axe validates static semantics; these validate interaction.
+// Public (no login) - the authenticated star-rating check lives in
+// keyboard-auth.spec.ts.
 
 test("skip link is the first tab stop and jumps to main content", async ({ page }) => {
   await page.goto("/");

@@ -61,3 +61,79 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 7
+
+  # Full-stack accessibility scan of the LOGGED-IN pages. Needs a same-origin
+  # API (auth cookies won't persist cross-site), so this job stands up MySQL +
+  # the Flask backend + the frontend all on localhost and runs the authenticated
+  # specs (E2E_AUTH=1). Together with frontend-a11y this covers every route.
+  frontend-a11y-full:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load schema + seed
+        run: |
+          mysql -h 127.0.0.1 -u root -proot < database/schema.sql
+          mysql -h 127.0.0.1 -u root -proot < database/seed.sql
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Start backend (localhost:5000)
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: internguide
+          SECRET_KEY: ci-test-secret
+          COOKIE_DOMAIN: "" # host-only cookie so it works on localhost
+          FRONTEND_ORIGIN: http://localhost:3000
+        run: |
+          python -m pip install --quiet -r requirements.txt
+          nohup python run.py > /tmp/backend.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5000/health && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:5000/health || (echo "backend failed to start"; cat /tmp/backend.log; exit 1)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Build (API on localhost, same-site)
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:5000
+      - name: Accessibility scan of authenticated pages (axe)
+        working-directory: frontend
+        run: npm run test:a11y
+        env:
+          E2E_AUTH: "1"
+          NEXT_PUBLIC_API_URL: http://localhost:5000
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-full
+          path: frontend/playwright-report/
+          retention-days: 7

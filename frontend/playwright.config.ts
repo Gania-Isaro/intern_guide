@@ -15,9 +15,27 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "on-first-retry",
   },
-  projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-  ],
+  // E2E_AUTH=1 (full-stack, same-origin API) runs the authenticated specs too;
+  // otherwise only the public specs run - e.g. CI against the cross-site prod
+  // API, where logging in can't set a cookie.
+  projects: process.env.E2E_AUTH
+    ? [
+        // logs in each role and saves session state; runs before the main project
+        { name: "setup", testMatch: /auth\.setup\.ts/ },
+        {
+          name: "chromium",
+          use: { ...devices["Desktop Chrome"] },
+          dependencies: ["setup"],
+        },
+      ]
+    : [
+        {
+          name: "chromium",
+          use: { ...devices["Desktop Chrome"] },
+          // skip the authenticated specs (*-auth.spec.ts)
+          testIgnore: /-auth\.spec\.ts$/,
+        },
+      ],
   // Only spin up a server when testing localhost. If BASE_URL points elsewhere
   // (e.g. prod), we test that instead and start nothing.
   webServer: process.env.BASE_URL

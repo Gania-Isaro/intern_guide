@@ -5,27 +5,40 @@ how it is enforced, and how to check it yourself.
 
 ## Enforced automatically
 
-Every pull request to `develop`/`main` runs the `frontend-a11y` job in
-`.github/workflows/ci.yml`, which fails the build on any regression:
+Every pull request to `develop`/`main` runs two jobs in
+`.github/workflows/ci.yml`, which fail the build on any regression:
 
 | Gate | Command | What it catches |
 | --- | --- | --- |
 | Code-time lint | `npm run lint:a11y` | `eslint-plugin-jsx-a11y` — unlabelled controls, invalid/misused ARIA, missing `alt`, click handlers on non-interactive elements. |
-| Runtime scan | `npm run test:a11y` | `axe-core` via Playwright — contrast, name/role/value, landmarks, labels, ARIA validity — on every key page. |
+| Public runtime scan (`frontend-a11y`) | `npm run test:a11y` | `axe-core` via Playwright on every public page + the open mobile menu. |
+| Authenticated runtime scan (`frontend-a11y-full`) | `E2E_AUTH=1 npm run test:a11y` | the same axe scan on every logged-in page (student, owner, admin), against a same-origin MySQL + Flask stack the job stands up. |
 
-Run both locally from `frontend/`:
+Run locally from `frontend/`:
 
 ```bash
-npm run lint:a11y      # fast, no browser
-npm run build          # test:a11y runs against the production build
-npm run test:a11y      # axe scan + keyboard specs (starts the server itself)
+npm run lint:a11y                 # fast, no browser
+npm run build                     # test:a11y runs against the production build
+npm run test:a11y                 # public pages + keyboard specs
+E2E_AUTH=1 npm run test:a11y      # ALSO the logged-in pages (needs a local
+                                  # backend on the same host, e.g. :5001, and
+                                  # the seed data loaded)
 ```
 
-The axe scan lives in `e2e/a11y.spec.ts` and covers: `/`, `/companies`,
-`/companies/1` (rating widgets + embedded map), `/compare`, `/how-it-works`,
-`/employers`, `/login`, `/register`, `/verify-email`, `/forgot-password`, and
-the open mobile menu. `e2e/keyboard.spec.ts` verifies the skip link and the
-mobile-menu button's keyboard operation and `aria-expanded` state.
+**Coverage — every route in the app:**
+- Public (`e2e/a11y.spec.ts`): `/`, `/companies`, `/companies/1` (rating widgets
+  + embedded map), `/compare`, `/how-it-works`, `/employers`, `/login`,
+  `/register`, `/verify-email`, `/forgot-password`, and the open mobile menu.
+- Authenticated (`e2e/a11y-auth.spec.ts`): `/account`, `/dashboard`, `/saved`,
+  `/my-placements`, `/my-reviews`, `/verify`, `/reviews/new`, `/owner`,
+  `/owner/company`, `/owner/register`, `/admin`, `/admin/companies`,
+  `/admin/companies/1/edit`.
+- Keyboard: skip link + mobile menu (`e2e/keyboard.spec.ts`); interactive
+  star-rating arrow keys (`e2e/keyboard-auth.spec.ts`).
+
+The authenticated specs reuse a login saved once per role by `e2e/auth.setup.ts`
+(seed accounts, password `Password123`). They run only in full-stack mode
+(`E2E_AUTH=1`) because the auth cookie needs a same-origin API.
 
 ## What was implemented
 
@@ -68,6 +81,6 @@ re-checked when shared components change:
 - **Screen reader (VoiceOver):** form errors announced on submit, star ratings
   read as their score, badges and icon-only buttons have names.
 
-Authenticated pages (dashboards, admin/owner tables, saved, my-reviews) reuse
-the same audited primitives (Card, Badge, Button, inputs, Dialog, StarRating);
-verify them manually when logged in, as CI scans the public routes.
+Both public and authenticated routes are scanned automatically (see the
+coverage list above), so a screen-reader spot-check is the main thing left to a
+human.
