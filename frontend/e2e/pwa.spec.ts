@@ -57,6 +57,41 @@ test("a page viewed online still works offline", async ({ page, context }) => {
   await context.setOffline(false);
 });
 
+test("the Download app button appears and triggers the install prompt", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+
+  // By default (no install event, not iOS) the button is hidden.
+  await expect(page.getByRole("button", { name: "Download app" })).toHaveCount(0);
+
+  // Simulate the browser's install event (with a spy on prompt()). Retry so we
+  // don't race React hydration attaching the listener.
+  await expect(async () => {
+    await page.evaluate(() => {
+      const e = new Event("beforeinstallprompt") as Event & {
+        prompt?: () => Promise<void>;
+        userChoice?: Promise<{ outcome: string }>;
+      };
+      (window as unknown as { __promptCalled?: boolean }).__promptCalled = false;
+      e.prompt = () => {
+        (window as unknown as { __promptCalled?: boolean }).__promptCalled = true;
+        return Promise.resolve();
+      };
+      e.userChoice = Promise.resolve({ outcome: "accepted" });
+      window.dispatchEvent(e);
+    });
+    await expect(page.getByRole("button", { name: "Download app" }).first()).toBeVisible({
+      timeout: 1000,
+    });
+  }).toPass();
+
+  // Clicking it calls the native prompt.
+  await page.getByRole("button", { name: "Download app" }).first().click();
+  const prompted = await page.evaluate(
+    () => (window as unknown as { __promptCalled?: boolean }).__promptCalled
+  );
+  expect(prompted).toBe(true);
+});
+
 test("an offline banner appears when the connection drops", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   const banner = page.getByText("You're offline - showing saved pages");
