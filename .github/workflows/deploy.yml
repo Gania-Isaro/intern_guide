@@ -69,7 +69,7 @@ jobs:
           git checkout main
           git reset --hard origin/main
           cd frontend
-          npm ci
+          npm install --no-audit --no-fund
           NODE_OPTIONS="--max-old-space-size=1536" npm run build
           sudo systemctl restart internguide-web
           sleep 4
