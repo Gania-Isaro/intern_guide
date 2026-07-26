@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 
@@ -66,6 +67,18 @@ function CompaniesBrowser() {
     // on a phone the filter panel is collapsed by default so the companies show
     // first; on desktop (lg+) the sidebar is always visible.
     const [filtersOpen, setFiltersOpen] = React.useState(false);
+    // companies ticked for the side-by-side compare (up to 3)
+    const [compareIds, setCompareIds] = React.useState<number[]>([]);
+
+    function toggleCompare(id: number) {
+        setCompareIds((prev) =>
+            prev.includes(id)
+                ? prev.filter((x) => x !== id)
+                : prev.length < 3
+                    ? [...prev, id]
+                    : prev
+        );
+    }
 
     // Build a new URL for this page, keeping the other query bits (like ?search)
     // that are already there. Reads the live URL each time, so it is never stale.
@@ -368,7 +381,16 @@ function CompaniesBrowser() {
             <>
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {data.companies.map((company) => (
-                  <CompanyCard key={company.id} company={company} />
+                  <CompanyCard
+                    key={company.id}
+                    company={company}
+                    selectable
+                    selected={compareIds.includes(company.id)}
+                    onToggleSelect={() => toggleCompare(company.id)}
+                    selectDisabled={
+                      !compareIds.includes(company.id) && compareIds.length >= 3
+                    }
+                  />
                 ))}
               </div>
 
@@ -400,6 +422,33 @@ function CompaniesBrowser() {
           )}
         </div>
       </div>
+
+      {/* sticky compare bar: appears once at least 2 companies are ticked */}
+      {compareIds.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white/95 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+            <p className="text-sm text-ink-secondary">
+              {compareIds.length} selected{" "}
+              <button
+                type="button"
+                onClick={() => setCompareIds([])}
+                className="text-primary hover:underline"
+              >
+                Clear
+              </button>
+            </p>
+            {compareIds.length >= 2 ? (
+              <Button asChild variant="primary" size="sm">
+                <Link href={`/compare?ids=${compareIds.join(",")}`}>
+                  Compare {compareIds.length}
+                </Link>
+              </Button>
+            ) : (
+              <span className="text-sm text-ink-muted">Pick one more to compare</span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -145,3 +145,15 @@ CREATE TABLE replies (
   FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- A student's saved/bookmarked companies (a shortlist to revisit or compare).
+-- One row per (user, company); the unique key stops duplicates.
+CREATE TABLE bookmarks (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  company_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_bookmark (user_id, company_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);

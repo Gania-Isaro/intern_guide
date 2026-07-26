@@ -49,6 +49,7 @@ function accountLinks(user: AuthUser) {
   // review" links, which both live inside that page now.
   return [
     companies,
+    { label: "Saved", href: "/saved" },
     { label: "My placements", href: "/my-placements" },
     { label: "My reviews", href: "/my-reviews" },
     { label: "My account", href: "/account" },

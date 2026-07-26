@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ShieldCheck, MapPin, Globe, Briefcase, CalendarClock } from "lucide-react";
+import { ShieldCheck, MapPin, Globe, Briefcase, CalendarClock, Heart } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useBookmarks } from "@/components/providers/bookmark-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
@@ -88,6 +89,7 @@ export default function CompanyProfilePage({
   const { id } = React.use(params);
 
   const { user } = useAuth();
+  const { isBookmarked, toggle } = useBookmarks();
 
   const [company, setCompany] = React.useState<CompanyDetail | null>(null);
   const [status, setStatus] = React.useState<
@@ -182,7 +184,22 @@ export default function CompanyProfilePage({
             {company.name.slice(0, 2).toUpperCase()}
           </div>
           <div className="space-y-2">
-            <h1 className="text-heading text-ink">{company.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-heading text-ink">{company.name}</h1>
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => toggle({ id: company.id, name: company.name })}
+                  aria-label={isBookmarked(company.id) ? "Remove from saved" : "Save company"}
+                  aria-pressed={isBookmarked(company.id)}
+                  className="rounded-full p-1.5 text-ink-muted hover:bg-paper"
+                >
+                  <Heart
+                    className={`h-5 w-5 ${isBookmarked(company.id) ? "fill-danger text-danger" : ""}`}
+                  />
+                </button>
+              )}
+            </div>
             {meta && <p className="text-body text-ink-secondary">{meta}</p>}
             <div className="flex flex-wrap items-center gap-4 pt-1 text-sm text-ink-secondary">
               {company.location && (

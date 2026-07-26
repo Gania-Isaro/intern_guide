@@ -27,6 +27,8 @@ tags:
     description: Company owners managing their business and internships
   - name: Admin
     description: Moderation and company management (admin only)
+  - name: Saved
+    description: A user's bookmarked/saved companies
   - name: System
     description: Health and documentation
 
@@ -650,3 +652,75 @@ paths:
       security: [{ cookieAuth: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
       responses: { '200': { description: Rejected }, '403': { $ref: '#/components/responses/Forbidden' } }
+
+  # ---------------------------------------------------------------- Compare
+  /companies/compare:
+    get:
+      tags: [Companies]
+      summary: Side-by-side data for up to 3 companies
+      parameters:
+        - { name: ids, in: query, required: true, description: comma-separated company ids, schema: { type: string, example: "1,2,3" } }
+      responses:
+        '200':
+          description: Comparable data per company (ratings, category averages, pay, amenities)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  companies: { type: array, items: { type: object } }
+
+  # ------------------------------------------------------------------ Saved
+  /me/bookmark-ids:
+    get:
+      tags: [Saved]
+      summary: The ids of the current user's saved companies (for heart state)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: Saved company ids
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { company_ids: { type: array, items: { type: integer } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /me/bookmarks:
+    get:
+      tags: [Saved]
+      summary: The current user's saved companies (full cards)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: Saved companies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { companies: { type: array, items: { $ref: '#/components/schemas/Company' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Saved]
+      summary: Save (bookmark) a company
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company_id]
+              properties: { company_id: { type: integer } }
+      responses:
+        '201': { description: Saved (idempotent) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /me/bookmarks/{company_id}:
+    delete:
+      tags: [Saved]
+      summary: Remove a saved company
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: company_id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Removed }
+        '401': { $ref: '#/components/responses/Unauthorized' }

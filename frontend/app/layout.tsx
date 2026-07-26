@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { BookmarkProvider } from "@/components/providers/bookmark-provider";
 import { Navbar } from "@/components/layout/navbar";
 import { Poppins, Nunito_Sans } from "next/font/google";
 import { Footer } from "@/components/layout/footer";
@@ -30,11 +31,13 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable} ${nunitoSans.variable}`}>
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <AuthProvider>
-          {/* global toast notifications; top-center stays clear of the mobile keyboard */}
-          <Toaster position="top-center" richColors closeButton />
-          <Navbar />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
-          <Footer />
+          <BookmarkProvider>
+            {/* global toast notifications; top-center stays clear of the mobile keyboard */}
+            <Toaster position="top-center" richColors closeButton />
+            <Navbar />
+            <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+            <Footer />
+          </BookmarkProvider>
         </AuthProvider>
       </body>
     </html>
