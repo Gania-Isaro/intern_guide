@@ -11,6 +11,10 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   `connect-src 'self' ${API}`,
+  // the company page embeds a keyless Google Maps iframe; without this the
+  // browser blocks it ("This content is blocked") because frames otherwise
+  // fall back to default-src 'self'.
+  "frame-src https://www.google.com https://maps.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

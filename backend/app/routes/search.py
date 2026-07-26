@@ -241,3 +241,58 @@ def get_company(company_id):
     company["internships"] = internships
     company["reviews"] = reviews
     return jsonify(company)
+
+
+@bp.get("/compare")
+def compare_companies():
+    """Side-by-side data for up to 3 companies (?ids=1,2,3).
+
+    Returns each company's overall rating, the four category averages, review
+    counts, amenities, and the pay types on its open internships - everything
+    the compare table shows. Order follows the ids the caller asked for.
+    """
+    raw = request.args.get("ids", "")
+    ids = []
+    for part in raw.split(","):
+        part = part.strip()
+        if part.isdigit() and int(part) not in ids:
+            ids.append(int(part))
+    ids = ids[:3]  # never compare more than three
+    if not ids:
+        return jsonify(companies=[])
+
+    cursor = get_db().cursor(dictionary=True)
+    placeholders = ",".join(["%s"] * len(ids))
+    cursor.execute(
+        f"""SELECT c.id, c.name, c.industry, c.location, c.size, c.average_rating,
+              (SELECT COUNT(*) FROM reviews r
+                 WHERE r.company_id = c.id AND r.status = 'approved') AS review_count,
+              (SELECT ROUND(AVG(r.mentorship), 1) FROM reviews r
+                 WHERE r.company_id = c.id AND r.status = 'approved') AS mentorship,
+              (SELECT ROUND(AVG(r.tasks), 1) FROM reviews r
+                 WHERE r.company_id = c.id AND r.status = 'approved') AS tasks,
+              (SELECT ROUND(AVG(r.learning), 1) FROM reviews r
+                 WHERE r.company_id = c.id AND r.status = 'approved') AS learning,
+              (SELECT ROUND(AVG(r.environment), 1) FROM reviews r
+                 WHERE r.company_id = c.id AND r.status = 'approved') AS environment
+           FROM companies c
+           WHERE c.id IN ({placeholders}) AND c.status = 'approved'""",
+        ids,
+    )
+    rows = {row["id"]: row for row in cursor.fetchall()}
+
+    for cid, row in rows.items():
+        cursor.execute("SELECT amenity FROM company_amenities WHERE company_id = %s", (cid,))
+        row["amenities"] = [a["amenity"] for a in cursor.fetchall()]
+        cursor.execute(
+            "SELECT DISTINCT compensation FROM internships"
+            " WHERE company_id = %s AND is_active = TRUE",
+            (cid,),
+        )
+        row["compensation"] = [r["compensation"] for r in cursor.fetchall()]
+        for key in ("average_rating", "mentorship", "tasks", "learning", "environment"):
+            if row[key] is not None:
+                row[key] = float(row[key])
+
+    # keep the order the caller listed the ids in
+    return jsonify(companies=[rows[i] for i in ids if i in rows])

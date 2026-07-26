@@ -59,8 +59,11 @@ async function handleSubmit(e: React.FormEvent) {
       return;
     }
 
-    toast.success("Account created - please log in.");
-    router.push("/login");
+    // hand the email to the verify page via sessionStorage, not the URL, so it
+    // never shows in the address bar or history
+    sessionStorage.setItem("pendingVerifyEmail", formData.email);
+    toast.success("Account created - check your email for a code.");
+    router.push("/verify-email");
   }
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

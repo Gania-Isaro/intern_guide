@@ -17,9 +17,32 @@ ALLOWED_ROLES = ("student", "company_owner")
 COOKIE_NAME = "token"
 TOKEN_LIFETIME = timedelta(days=1)
 
-# "forgot password" one-time code settings
+# one-time code settings (shared by password reset and email verification)
 OTP_TTL_MINUTES = 10   # how long a code stays valid
 OTP_MAX_ATTEMPTS = 5   # wrong guesses allowed before the code is burned
+
+
+def _send_email_verification(cursor, db, user_id, email, name):
+    """Generate a fresh email-verification code, store its hash, and email it."""
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    cursor.execute("DELETE FROM email_verification_codes WHERE user_id = %s", (user_id,))
+    cursor.execute(
+        "INSERT INTO email_verification_codes (user_id, code_hash, expires_at)"
+        " VALUES (%s, %s, NOW() + INTERVAL %s MINUTE)",
+        (user_id, generate_password_hash(code), OTP_TTL_MINUTES),
+    )
+    db.commit()
+    try:
+        send_email(
+            email,
+            "Verify your InternGuide email",
+            f"Hi {name},\n\n"
+            f"Your email verification code is: {code}\n\n"
+            f"It expires in {OTP_TTL_MINUTES} minutes. If you did not create an "
+            f"InternGuide account, you can ignore this email.\n\n- InternGuide",
+        )
+    except Exception:
+        current_app.logger.exception("Could not send verification email")
 
 
 @bp.post("/register")
@@ -52,9 +75,19 @@ def register():
         (name, email, generate_password_hash(password), role),
     )
     db.commit()
+    user_id = cursor.lastrowid
+
+    # email the verification code; the account cannot log in until it is used
+    _send_email_verification(cursor, db, user_id, email, name)
     cursor.close()
 
-    return jsonify(id=cursor.lastrowid, name=name, email=email, role=role), 201
+    return (
+        jsonify(
+            message="Account created. We sent a 6-digit code to your email to verify it.",
+            email=email,
+        ),
+        201,
+    )
 
 
 @bp.post("/login")
@@ -74,6 +107,16 @@ def login():
     # same message either way, so we don't reveal which emails exist
     if user is None or not check_password_hash(user["password_hash"], password):
         return jsonify(error="wrong email or password"), 401
+
+    # the account exists and the password is right, but the email is unconfirmed
+    if not user["email_verified"]:
+        return (
+            jsonify(
+                error="Please verify your email first - check your inbox for the code.",
+                email_unverified=True,
+            ),
+            403,
+        )
 
     token = jwt.encode(
         {
@@ -257,6 +300,79 @@ def reset_password():
     db.commit()
 
     return jsonify(message="Your password has been reset. You can now log in.")
+
+
+@bp.post("/verify-email")
+@limiter.limit("15 per minute")
+def verify_email():
+    # A new account confirms its email with the 6-digit code we sent.
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    code = (data.get("code") or "").strip()
+    if not email or not code:
+        return jsonify(error="email and code are required"), 400
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT id, email_verified FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    bad = (jsonify(error="that code is wrong or has expired"), 403)
+    if user is None:
+        return bad
+    if user["email_verified"]:
+        return jsonify(message="Your email is already verified. You can log in.")
+
+    cursor.execute(
+        "SELECT id, code_hash, attempts FROM email_verification_codes"
+        " WHERE user_id = %s AND used = FALSE AND expires_at > NOW()"
+        " ORDER BY id DESC LIMIT 1",
+        (user["id"],),
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return bad
+    if row["attempts"] >= OTP_MAX_ATTEMPTS:
+        cursor.execute(
+            "UPDATE email_verification_codes SET used = TRUE WHERE id = %s", (row["id"],)
+        )
+        db.commit()
+        return jsonify(error="too many wrong tries, please request a new code"), 429
+    if not check_password_hash(row["code_hash"], code):
+        cursor.execute(
+            "UPDATE email_verification_codes SET attempts = attempts + 1 WHERE id = %s",
+            (row["id"],),
+        )
+        db.commit()
+        return bad
+
+    cursor.execute("UPDATE users SET email_verified = TRUE WHERE id = %s", (user["id"],))
+    cursor.execute(
+        "UPDATE email_verification_codes SET used = TRUE WHERE id = %s", (row["id"],)
+    )
+    db.commit()
+    return jsonify(message="Email verified - you can now log in.")
+
+
+@bp.post("/resend-verification")
+@limiter.limit("5 per minute; 20 per hour")
+def resend_verification():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        return jsonify(error="email is required"), 400
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT id, name, email_verified FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    # same reply either way, so it can't reveal which emails are registered
+    generic = jsonify(message="If that account still needs verifying, a new code is on its way.")
+    if user is None or user["email_verified"]:
+        return generic
+    _send_email_verification(cursor, db, user["id"], email, user["name"])
+    return generic
 
 
 @bp.get("/me")
