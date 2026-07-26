@@ -192,9 +192,9 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - { $ref: '#/components/schemas/User' }
-                  - { type: 'null' }
+                nullable: true
+                allOf:
+                  - $ref: '#/components/schemas/User'
 
   /auth/forgot-password:
     post:
@@ -281,6 +281,24 @@ paths:
                   total: { type: integer }
                   total_pages: { type: integer }
                   sort: { type: string }
+    post:
+      tags: [Admin]
+      summary: Admin creates a company (skips the queue, starts approved)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                industry: { type: string }
+                location: { type: string }
+      responses:
+        '201': { description: Company created }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /companies/{id}:
     get:
       tags: [Companies]
@@ -459,7 +477,7 @@ paths:
                 size: { type: string, enum: ["1-10", "11-50", "51-200", "200+"] }
                 founded_year: { type: integer }
       responses:
-        '201': { description: Registered, pending admin approval }
+        '201': { description: "Registered, pending admin approval" }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /me/company:
@@ -520,25 +538,6 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
 
   # ------------------------------------------------------------------- Admin
-  /companies:
-    post:
-      tags: [Admin]
-      summary: Admin creates a company (skips the queue, starts approved)
-      security: [{ cookieAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name]
-              properties:
-                name: { type: string }
-                industry: { type: string }
-                location: { type: string }
-      responses:
-        '201': { description: Company created }
-        '403': { $ref: '#/components/responses/Forbidden' }
   /admin/companies:
     get:
       tags: [Admin]
