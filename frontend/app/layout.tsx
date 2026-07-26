@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/auth-provider";
@@ -6,6 +6,7 @@ import { BookmarkProvider } from "@/components/providers/bookmark-provider";
 import { Navbar } from "@/components/layout/navbar";
 import { Poppins, Nunito_Sans } from "next/font/google";
 import { Footer } from "@/components/layout/footer";
+import { Pwa } from "@/components/pwa/pwa";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -20,6 +21,24 @@ const nunitoSans = Nunito_Sans({
 export const metadata: Metadata = {
   title: "InternGuide",
   description: "Verified internship reviews for students in Rwanda.",
+  // makes iOS treat it as an installable app with our name and icon
+  appleWebApp: {
+    capable: true,
+    title: "InternGuide",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+// theme_color for the browser/OS UI (status bar tint on mobile)
+export const viewport: Viewport = {
+  themeColor: "#18815a",
 };
 
 export default function RootLayout({
@@ -47,6 +66,7 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <Pwa />
           </BookmarkProvider>
         </AuthProvider>
       </body>
