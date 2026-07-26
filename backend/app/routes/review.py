@@ -201,6 +201,54 @@ def my_placements():
     return jsonify(company_ids=company_ids)
 
 
+@bp.get("/me/proofs")
+@role_required("student")
+def my_proofs():
+    """One row per company the student uploaded proof for, with its status.
+
+    A student can upload more than once for the same company (e.g. a rejected
+    one, then a new pending one), so we collapse each company to a single
+    effective status: approved wins, then pending, then rejected. 'reviewed'
+    lets the page show 'Review submitted' instead of 'Write a review'.
+    """
+    user_id = g.current_user["id"]
+    cursor = get_db().cursor(dictionary=True)
+    cursor.execute(
+        "SELECT c.id AS company_id, c.name AS company_name,"
+        " MAX(vp.status = 'approved') AS has_approved,"
+        " MAX(vp.status = 'pending') AS has_pending,"
+        " MAX(vp.created_at) AS last_submitted,"
+        " (SELECT COUNT(*) FROM reviews r"
+        "    WHERE r.user_id = %s AND r.company_id = c.id) AS review_count"
+        " FROM verification_proofs vp"
+        " JOIN companies c ON c.id = vp.company_id"
+        " WHERE vp.user_id = %s"
+        " GROUP BY c.id, c.name"
+        " ORDER BY last_submitted DESC",
+        (user_id, user_id),
+    )
+
+    placements = []
+    for row in cursor.fetchall():
+        if row["has_approved"]:
+            status = "approved"
+        elif row["has_pending"]:
+            status = "pending"
+        else:
+            status = "rejected"
+        placements.append(
+            {
+                "company_id": row["company_id"],
+                "company_name": row["company_name"],
+                "status": status,
+                "reviewed": row["review_count"] > 0,
+                "last_submitted": row["last_submitted"].isoformat(),
+            }
+        )
+
+    return jsonify(placements=placements)
+
+
 # ---------- F3: a company owner replies to a review ----------
 
 @bp.post("/reviews/<int:review_id>/reply")
