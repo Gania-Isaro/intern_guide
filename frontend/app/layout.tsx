@@ -29,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${poppins.variable} ${nunitoSans.variable}`}>
-      <body className="flex min-h-screen flex-col font-sans antialiased">
+      <body className="flex min-h-dvh flex-col font-sans antialiased">
         <AuthProvider>
           <BookmarkProvider>
             {/* global toast notifications; top-center stays clear of the mobile keyboard */}

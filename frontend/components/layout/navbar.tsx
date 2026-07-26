@@ -128,7 +128,7 @@ function Navbar() {
       </div>
 
       {/* Mobile dropdown menu - only shows when open is true */}
-      <nav className={cn("flex flex-col gap-1 border-t border-border px-6 pb-4 pt-2 md:hidden", open ? "block" : "hidden")}>
+      <nav className={cn("flex-col gap-1 border-t border-border px-6 pb-4 pt-2 md:hidden", open ? "flex" : "hidden")}>
         {links.map((link) => (
           <Link
             key={link.label}

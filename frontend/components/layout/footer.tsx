@@ -35,7 +35,7 @@ function Footer() {
 
   return (
     <footer className="border-t border-border bg-white">
-      <div className="container flex flex-col gap-9 pb-10 pt-14">
+      <div className="container flex flex-col gap-9 pb-8 pt-10 sm:pb-10 sm:pt-14">
         {/* stacks on a phone, sits in a row from md up */}
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           {/* Brand + tagline */}

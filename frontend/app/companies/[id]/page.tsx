@@ -413,13 +413,13 @@ const CATEGORIES: { key: keyof Review; label: string }[] = [
 function ReviewCard({ review }: { review: Review }) {
   return (
     <article className="rounded-card border border-border bg-white p-lg shadow-soft">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-paper font-display text-sm font-semibold text-ink">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper font-display text-sm font-semibold text-ink">
             {review.reviewer_name.slice(0, 1).toUpperCase()}
           </div>
-          <div>
-            <p className="flex items-center gap-2 text-card-title text-ink">
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-card-title text-ink">
               {review.reviewer_name}
               {review.reviewer_verified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-badge text-primary">
@@ -431,7 +431,7 @@ function ReviewCard({ review }: { review: Review }) {
             <p className="text-sm text-ink-muted">{formatDate(review.created_at)}</p>
           </div>
         </div>
-        <StarRating value={review.rating} readOnly showValue />
+        <StarRating value={review.rating} readOnly showValue className="shrink-0" />
       </div>
 
       {review.comment && (

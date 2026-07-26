@@ -63,8 +63,9 @@ export default function LoginPage() {
     if (!result.ok) {
       // an unverified account is sent to the verify step, not left on an error
       if (/verify your email/i.test(result.error)) {
+        sessionStorage.setItem("pendingVerifyEmail", formData.email);
         toast.error(result.error);
-        router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+        router.push("/verify-email");
         return;
       }
       setSubmitError(result.error);
