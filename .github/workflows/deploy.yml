@@ -1,0 +1,77 @@
+name: Deploy to production
+
+# Auto-deploys on every push to main:
+#   - backend  -> 3.87.217.227  (Flask/gunicorn, api.gania.tech)
+#   - frontend -> 34.239.0.61   (Next.js, internguide.gania.tech)
+# The database server is not touched by deploys (schema changes are applied
+# manually). Requires one repo secret: DEPLOY_SSH_KEY (the CI deploy private key).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # lets you trigger a deploy by hand from the Actions tab
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          python -m pip install --quiet -r requirements.txt
+          python -m pytest -q
+
+  deploy-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load SSH deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 3.87.217.227 >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Deploy backend over SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key ubuntu@3.87.217.227 'bash -s' <<'REMOTE'
+          set -e
+          cd /home/ubuntu/intern_guide
+          git fetch origin
+          git checkout main
+          git reset --hard origin/main
+          cd backend
+          .venv/bin/pip install --quiet -r requirements.txt
+          sudo systemctl restart internguide-api
+          sleep 3
+          curl -sf http://127.0.0.1:8000/health && echo " backend healthy"
+          REMOTE
+
+  deploy-frontend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load SSH deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 34.239.0.61 >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Deploy frontend over SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key ubuntu@34.239.0.61 'bash -s' <<'REMOTE'
+          set -e
+          cd /home/ubuntu/intern_guide
+          git fetch origin
+          git checkout main
+          git reset --hard origin/main
+          cd frontend
+          npm ci
+          NODE_OPTIONS="--max-old-space-size=1536" npm run build
+          sudo systemctl restart internguide-web
+          sleep 4
+          curl -sf http://127.0.0.1:3000/ -o /dev/null && echo " frontend healthy"
+          REMOTE

@@ -7,6 +7,7 @@ import { ShieldCheck, MapPin, Globe, Briefcase, CalendarClock } from "lucide-rea
 import { apiGet } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { type Company } from "@/components/company/company-card";
@@ -93,20 +94,27 @@ export default function CompanyProfilePage({
     "loading" | "ready" | "error" | "not-found"
   >("loading");
   const [reloadKey, setReloadKey] = React.useState(0);
-  // may the person looking at this page review THIS company? Only a student
-  // with an approved proof for it can, so the button shows nowhere else.
-  const [canReview, setCanReview] = React.useState(false);
+  // where this student stands with THIS company, so the button matches:
+  //   approved -> can write a review     pending  -> proof is being checked
+  //   rejected -> can upload again        none     -> hasn't submitted proof
+  const [myStatus, setMyStatus] = React.useState<
+    "approved" | "pending" | "rejected" | "none"
+  >("none");
+  const canReview = myStatus === "approved";
 
   React.useEffect(() => {
     if (!user || user.role !== "student") {
-      setCanReview(false);
+      setMyStatus("none");
       return;
     }
     (async () => {
-      const result = await apiGet("/me/placements");
+      const result = await apiGet("/me/proofs");
       if (result.ok) {
-        const ids = (result.data as { company_ids: number[] }).company_ids;
-        setCanReview(ids.includes(Number(id)));
+        const list = (result.data as {
+          placements: { company_id: number; status: "approved" | "pending" | "rejected" }[];
+        }).placements;
+        const mine = list.find((p) => p.company_id === Number(id));
+        setMyStatus(mine ? mine.status : "none");
       }
     })();
   }, [user, id]);
@@ -210,17 +218,27 @@ export default function CompanyProfilePage({
           ) : (
             <p className="text-sm text-ink-muted">No reviews yet</p>
           )}
-          {canReview ? (
-            <Button asChild variant="primary">
-              <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
-            </Button>
-          ) : user?.role === "student" ? (
-            // a student who has not proved a placement here yet: point them at
-            // uploading proof, with this company already chosen
-            <Button asChild variant="secondary">
-              <Link href={`/verify?company=${company.id}`}>Verify your placement here</Link>
-            </Button>
-          ) : null}
+          {user?.role === "student" && (
+            <>
+              {myStatus === "approved" && (
+                <Button asChild variant="primary">
+                  <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
+                </Button>
+              )}
+              {/* proof sent but not decided yet: say so, don't offer to re-upload */}
+              {myStatus === "pending" && <Badge status="pending" />}
+              {myStatus === "rejected" && (
+                <Button asChild variant="secondary">
+                  <Link href={`/verify?company=${company.id}`}>Upload proof again</Link>
+                </Button>
+              )}
+              {myStatus === "none" && (
+                <Button asChild variant="secondary">
+                  <Link href={`/verify?company=${company.id}`}>Verify your placement here</Link>
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </header>
       {/* --- about --- */}
@@ -338,15 +356,21 @@ export default function CompanyProfilePage({
             title="No reviews yet"
             description="Be the first verified intern to review this company."
             action={
-              canReview ? (
+              user?.role !== "student" ? undefined : myStatus === "approved" ? (
                 <Button asChild variant="secondary" size="sm">
                   <Link href={`/reviews/new?company=${company.id}`}>Write a review</Link>
                 </Button>
-              ) : user?.role === "student" ? (
+              ) : myStatus === "pending" ? (
+                <p className="text-sm text-ink-muted">Your proof is being checked.</p>
+              ) : (
                 <Button asChild variant="secondary" size="sm">
-                  <Link href={`/verify?company=${company.id}`}>Verify your placement to review</Link>
+                  <Link href={`/verify?company=${company.id}`}>
+                    {myStatus === "rejected"
+                      ? "Upload proof again"
+                      : "Verify your placement to review"}
+                  </Link>
                 </Button>
-              ) : undefined
+              )
             }
           />
         ) : (
