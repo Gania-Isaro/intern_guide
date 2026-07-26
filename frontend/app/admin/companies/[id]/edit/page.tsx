@@ -132,6 +132,7 @@ export default function AdminEditCompanyPage() {
         <Input
           id="name"
           label="Name"
+          autoComplete="organization"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
@@ -145,6 +146,7 @@ export default function AdminEditCompanyPage() {
           <Input
             id="location"
             label="Location"
+            autoComplete="address-level2"
             value={form.location}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
           />
@@ -152,12 +154,15 @@ export default function AdminEditCompanyPage() {
         <Input
           id="website"
           label="Website"
+          type="url"
+          inputMode="url"
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
         />
         <Input
           id="google_address"
           label="Address on Google Maps"
+          autoComplete="street-address"
           value={form.google_address}
           onChange={(e) => setForm({ ...form, google_address: e.target.value })}
           placeholder="KG 7 Ave, Kigali, Rwanda"
@@ -186,6 +191,7 @@ export default function AdminEditCompanyPage() {
             id="founded_year"
             label="Founded in"
             type="number"
+            inputMode="numeric"
             value={form.founded_year}
             onChange={(e) => setForm({ ...form, founded_year: e.target.value })}
             placeholder="2018"

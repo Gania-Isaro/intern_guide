@@ -470,6 +470,7 @@ function AddInternshipForm({
               id="stipend_amount"
               label="Amount"
               type="number"
+              inputMode="numeric"
               value={form.stipend_amount}
               onChange={(e) => set("stipend_amount", e.target.value)}
               placeholder="150000"
@@ -495,6 +496,7 @@ function AddInternshipForm({
             id="duration_months"
             label="Length in months"
             type="number"
+            inputMode="numeric"
             value={form.duration_months}
             onChange={(e) => set("duration_months", e.target.value)}
             placeholder="3"
@@ -503,6 +505,7 @@ function AddInternshipForm({
             id="openings"
             label="Openings"
             type="number"
+            inputMode="numeric"
             value={form.openings}
             onChange={(e) => set("openings", e.target.value)}
             placeholder="2"

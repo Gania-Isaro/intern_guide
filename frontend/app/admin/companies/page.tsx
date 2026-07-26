@@ -492,6 +492,7 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
       <Input
         id="name"
         label="Name"
+        autoComplete="organization"
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
       />
@@ -505,6 +506,7 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
         <Input
           id="location"
           label="Location"
+          autoComplete="address-level2"
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
         />
@@ -512,6 +514,8 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
       <Input
         id="website"
         label="Website"
+        type="url"
+        inputMode="url"
         value={form.website}
         onChange={(e) => setForm({ ...form, website: e.target.value })}
       />
