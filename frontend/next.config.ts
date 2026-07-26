@@ -15,6 +15,9 @@ const csp = [
   // browser blocks it ("This content is blocked") because frames otherwise
   // fall back to default-src 'self'.
   "frame-src https://www.google.com https://maps.google.com",
+  // the PWA service worker and web manifest are served from our own origin
+  "worker-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
