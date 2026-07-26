@@ -10,6 +10,8 @@ import * as React from "react";
 import Link from "next/link";
 import { FileUp } from "lucide-react";
 
+import { toast } from "sonner";
+
 import { apiGet, apiUpload } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -135,6 +137,7 @@ export default function VerifyPage() {
     }
 
     await refetch(); // in case the account state changed
+    toast.success("Proof uploaded - an admin will review it.");
     setSent(true);
   }
 

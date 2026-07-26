@@ -10,8 +10,10 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AMENITY_LABELS, labelFor } from "@/lib/labels";
 import { useAuth } from "@/components/providers/auth-provider";
 import { AdminTabs } from "@/components/layout/admin-tabs";
@@ -68,6 +70,8 @@ export default function ManageCompaniesPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [busyId, setBusyId] = React.useState<number | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
+  // the company the admin is about to permanently delete (drives the dialog)
+  const [toDelete, setToDelete] = React.useState<Company | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -112,8 +116,13 @@ export default function ManageCompaniesPage() {
     setBusyId(id);
     setNotice(null);
     const result = await apiPost(`/admin/companies/${id}/${choice}`, {});
-    if (result.ok) await load();
-    else setNotice(result.error);
+    if (result.ok) {
+      toast.success(`Company ${choice === "approve" ? "approved" : "rejected"}.`);
+      await load();
+    } else {
+      toast.error(result.error);
+      setNotice(result.error);
+    }
     setBusyId(null);
   }
 
@@ -123,27 +132,36 @@ export default function ManageCompaniesPage() {
     setNotice(null);
     const action = live ? "activate" : "deactivate";
     const result = await apiPost(`/admin/companies/${id}/${action}`, {});
-    if (result.ok) await load();
-    else setNotice(result.error);
+    if (result.ok) {
+      toast.success(live ? "Company is visible to students again." : "Company hidden from students.");
+      await load();
+    } else {
+      toast.error(result.error);
+      setNotice(result.error);
+    }
     setBusyId(null);
   }
 
   // Delete for good. Everything attached to the company goes with it, so
   // the admin has to confirm first.
-  async function remove(company: Company) {
-    const sure = window.confirm(
-      `Delete ${company.name} for good?\n\n` +
-        "Its internships and reviews are deleted too. This cannot be undone."
-    );
-    if (!sure) return;
+  // The Delete button just opens the confirm dialog; the real work waits for
+  // a deliberate confirmation.
+  function remove(company: Company) {
+    setToDelete(company);
+  }
 
+  async function confirmDelete() {
+    if (!toDelete) return;
+    const company = toDelete;
+    setToDelete(null);
     setBusyId(company.id);
     setNotice(null);
     const result = await apiDelete(`/admin/companies/${company.id}`);
     if (result.ok) {
-      setNotice(`${company.name} was deleted.`);
+      toast.success(`${company.name} was deleted.`);
       await load();
     } else {
+      toast.error(result.error);
       setNotice(result.error);
     }
     setBusyId(null);
@@ -151,6 +169,15 @@ export default function ManageCompaniesPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 py-10 px-4">
+      <ConfirmDialog
+        open={toDelete !== null}
+        title={toDelete ? `Delete ${toDelete.name}?` : ""}
+        description="Its internships and reviews are deleted too. This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
       <div>
         <h1 className="text-2xl font-bold">Manage companies</h1>
         <p className="text-ink-secondary">
@@ -447,9 +474,11 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
 
     const result = await apiPost("/companies", form);
     if (result.ok) {
+      toast.success(`${form.name} was added.`);
       setForm(EMPTY_FORM);
       onCreated();
     } else {
+      toast.error(result.error);
       setMessage(result.error);
     }
     setSaving(false);
@@ -463,6 +492,7 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
       <Input
         id="name"
         label="Name"
+        autoComplete="organization"
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
       />
@@ -476,6 +506,7 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
         <Input
           id="location"
           label="Location"
+          autoComplete="address-level2"
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
         />
@@ -483,6 +514,8 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
       <Input
         id="website"
         label="Website"
+        type="url"
+        inputMode="url"
         value={form.website}
         onChange={(e) => setForm({ ...form, website: e.target.value })}
       />

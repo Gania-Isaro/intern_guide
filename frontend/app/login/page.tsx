@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { apiPost } from "@/lib/api";
 import { validateLoginForm } from "@/lib/validation";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -65,6 +66,7 @@ export default function LoginPage() {
     }
 
     await refetch(); // reload /auth/me so the navbar shows the user immediately
+    toast.success("Welcome back!");
     router.push(safeReturnPath());
   }
 
@@ -91,6 +93,7 @@ export default function LoginPage() {
             id="email"
             name="email"
             type="email"
+            autoComplete="email"
             value={formData.email}
             onChange={handleChange}
             className={inputClass(!!errors.email)}
@@ -105,6 +108,7 @@ export default function LoginPage() {
           <PasswordInput
             id="password"
             name="password"
+            autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
             className={inputClass(!!errors.password)}

@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { apiGet, apiPost } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -309,8 +310,13 @@ function InternshipRow({
     setBusy(true);
     setError(null);
     const result = await apiPost(`/internships/${role.id}/toggle`, {});
-    if (result.ok) onToggled();
-    else setError(result.error);
+    if (result.ok) {
+      toast.success(role.is_active ? "Internship closed." : "Internship opened.");
+      onToggled();
+    } else {
+      toast.error(result.error);
+      setError(result.error);
+    }
     setBusy(false);
   }
 
@@ -396,8 +402,10 @@ function AddInternshipForm({
     setMessage(null);
     const result = await apiPost(`/companies/${companyId}/internships`, form);
     if (result.ok) {
+      toast.success("Internship posted.");
       onPosted();
     } else {
+      toast.error(result.error);
       setMessage(result.error);
       setSaving(false);
     }
@@ -462,6 +470,7 @@ function AddInternshipForm({
               id="stipend_amount"
               label="Amount"
               type="number"
+              inputMode="numeric"
               value={form.stipend_amount}
               onChange={(e) => set("stipend_amount", e.target.value)}
               placeholder="150000"
@@ -487,6 +496,7 @@ function AddInternshipForm({
             id="duration_months"
             label="Length in months"
             type="number"
+            inputMode="numeric"
             value={form.duration_months}
             onChange={(e) => set("duration_months", e.target.value)}
             placeholder="3"
@@ -495,6 +505,7 @@ function AddInternshipForm({
             id="openings"
             label="Openings"
             type="number"
+            inputMode="numeric"
             value={form.openings}
             onChange={(e) => set("openings", e.target.value)}
             placeholder="2"
@@ -632,8 +643,10 @@ function ReviewRow({
     setError(null);
     const result = await apiPost(`/reviews/${review.id}/reply`, { body });
     if (result.ok) {
+      toast.success("Reply sent.");
       onReplied();
     } else {
+      toast.error(result.error);
       setError(result.error);
       setSaving(false);
     }
