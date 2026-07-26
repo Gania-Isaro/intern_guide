@@ -11,7 +11,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 // color, icon, and text automatically.
 function Badge({ className, status = "verified", ...props }: BadgeProps) {
   const styles = {
-    verified: "bg-primary-tint text-primary",   // light green
+    verified: "bg-primary-tint text-primary-deep",   // light green (deep text for AA contrast)
     pending: "bg-pending-tint text-pending",     // light amber
     rejected: "bg-danger-tint text-danger",      // light red
   };

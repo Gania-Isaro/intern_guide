@@ -17,9 +17,9 @@ import { apiPost } from "@/lib/api";
 const CODE_TTL_SECONDS = 10 * 60;
 
 const inputClass =
-  "w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-200";
+  "w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring";
 const buttonClass =
-  "w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+  "w-full bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 function formatCountdown(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -111,7 +111,7 @@ function VerifyEmailForm() {
         </p>
 
         <form onSubmit={handleVerify}>
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {error && <p role="alert" className="text-danger text-sm mb-4">{error}</p>}
 
           <div className="mb-2">
             <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
@@ -133,7 +133,7 @@ function VerifyEmailForm() {
           {/* live expiry status, so the user knows how long the code is good for */}
           <p className="mb-6 text-xs" aria-live="polite">
             {expired ? (
-              <span className="text-red-500">
+              <span className="text-danger">
                 Your code has expired. Request a new one below.
               </span>
             ) : (
@@ -155,7 +155,7 @@ function VerifyEmailForm() {
             type="button"
             onClick={handleResend}
             disabled={resending}
-            className="text-green-600 hover:underline disabled:opacity-50 font-medium"
+            className="text-primary-deep underline disabled:opacity-50 font-medium"
           >
             {resending ? "Sending..." : "Resend code"}
           </button>

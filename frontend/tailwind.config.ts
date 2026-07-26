@@ -57,6 +57,14 @@ const config: Config = {
           tint: "hsl(var(--primary-tint))", // a very light background version
           foreground: "hsl(var(--primary-foreground))", // text color on top of primary
         },
+        // "accent" is the same green as primary, exposed on the numbered scale
+        // the homepage uses. Mapped to primary tokens so these classes actually
+        // render (they were undefined) and stay AA-compliant.
+        accent: {
+          50: "hsl(var(--primary-tint))",  // light green background
+          600: "hsl(var(--primary))",       // green (4.85:1 on white)
+          700: "hsl(var(--primary-deep))",  // deep green (7.55:1 on white)
+        },
         // Used only for "pending" status badges
         pending: {
           DEFAULT: "hsl(var(--pending))",

@@ -16,7 +16,9 @@
     --foreground: 152 12% 13%;  /* main dark text color */
     --ink: 152 12% 13%;
     --ink-secondary: 140 7% 35%;
-    --ink-muted: 132 6% 61%;
+    /* darkened from 61% -> 40% lightness so muted text (dates, counts,
+       placeholders) clears WCAG AA 4.5:1 on white (was 2.65:1, now ~5.4:1) */
+    --ink-muted: 132 8% 40%;
     --border: 132 12% 90%;      /* light gray line color */
     --input: 132 12% 90%;
 
@@ -27,8 +29,9 @@
     --primary-foreground: 0 0% 100%;
     --ring: 158 68% 30%;        /* focus glow uses the same green */
 
-    /* Amber, only for "pending" status */
-    --pending: 39 74% 34%;
+    /* Amber, only for "pending" status. Darkened 34% -> 29% so the pending
+       badge text clears AA on its own tint background (was 4.03:1, now ~5.1:1) */
+    --pending: 39 74% 29%;
     --pending-tint: 42 55% 90%;
 
     /* Red, only for "rejected"/error states */
@@ -50,5 +53,47 @@
   }
   h1, h2, h3, h4 {
     @apply font-display; /* headings use the heading font */
+  }
+
+  /* WCAG 2.4.7 - a visible keyboard focus ring on every interactive element.
+     :focus-visible keeps it keyboard-only, so a mouse click stays clean. Zero
+     specificity (:where) means any component that draws its own ring - e.g. our
+     Button - keeps winning, so we never double up. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+/* WCAG 2.3.3 - honour "reduce motion". Near-instant instead of fully 0s so
+   state changes (dialog open/close) still fire their transition events. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  /* WCAG 2.4.1 - "Skip to main content". Sits off-screen until it receives
+     keyboard focus, then slides into the top-left corner. */
+  .skip-link {
+    position: fixed;
+    left: 0.75rem;
+    top: -4rem;
+    z-index: 100;
+    border-radius: 0.5rem;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    padding: 0.6rem 1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 0.75rem;
   }
 }

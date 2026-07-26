@@ -422,8 +422,8 @@ function ReviewCard({ review }: { review: Review }) {
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-card-title text-ink">
               {review.reviewer_name}
               {review.reviewer_verified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-badge text-primary">
-                  <ShieldCheck className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-badge text-primary-deep">
+                  <ShieldCheck className="h-3 w-3" aria-hidden="true" />
                   Verified
                 </span>
               )}
