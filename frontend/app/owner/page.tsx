@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { apiGet, apiPost } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -309,8 +310,13 @@ function InternshipRow({
     setBusy(true);
     setError(null);
     const result = await apiPost(`/internships/${role.id}/toggle`, {});
-    if (result.ok) onToggled();
-    else setError(result.error);
+    if (result.ok) {
+      toast.success(role.is_active ? "Internship closed." : "Internship opened.");
+      onToggled();
+    } else {
+      toast.error(result.error);
+      setError(result.error);
+    }
     setBusy(false);
   }
 
@@ -396,8 +402,10 @@ function AddInternshipForm({
     setMessage(null);
     const result = await apiPost(`/companies/${companyId}/internships`, form);
     if (result.ok) {
+      toast.success("Internship posted.");
       onPosted();
     } else {
+      toast.error(result.error);
       setMessage(result.error);
       setSaving(false);
     }
@@ -632,8 +640,10 @@ function ReviewRow({
     setError(null);
     const result = await apiPost(`/reviews/${review.id}/reply`, { body });
     if (result.ok) {
+      toast.success("Reply sent.");
       onReplied();
     } else {
+      toast.error(result.error);
       setError(result.error);
       setSaving(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { apiPost } from "@/lib/api";
 import { validateRegisterForm } from "@/lib/validation";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -58,6 +59,7 @@ async function handleSubmit(e: React.FormEvent) {
       return;
     }
 
+    toast.success("Account created - please log in.");
     router.push("/login");
   }
   return (
@@ -83,6 +85,7 @@ async function handleSubmit(e: React.FormEvent) {
             id="fullName"
             name="fullName"
             type="text"
+            autoComplete="name"
             value={formData.fullName}
             onChange={handleChange}
             className={inputClass(!!errors.fullName)}
@@ -98,6 +101,7 @@ async function handleSubmit(e: React.FormEvent) {
             id="email"
             name="email"
             type="email"
+            autoComplete="email"
             value={formData.email}
             onChange={handleChange}
             className={inputClass(!!errors.email)}
@@ -112,6 +116,7 @@ async function handleSubmit(e: React.FormEvent) {
           <PasswordInput
             id="password"
             name="password"
+            autoComplete="new-password"
             value={formData.password}
             onChange={handleChange}
             className={inputClass(!!errors.password)}
@@ -126,6 +131,7 @@ async function handleSubmit(e: React.FormEvent) {
           <PasswordInput
             id="confirmPassword"
             name="confirmPassword"
+            autoComplete="new-password"
             value={formData.confirmPassword}
             onChange={handleChange}
             className={inputClass(!!errors.confirmPassword)}

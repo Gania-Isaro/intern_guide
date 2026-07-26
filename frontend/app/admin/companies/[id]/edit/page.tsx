@@ -6,6 +6,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { apiGet, apiPost } from "@/lib/api";
 import { AMENITY_LABELS, labelFor } from "@/lib/labels";
@@ -104,8 +105,10 @@ export default function AdminEditCompanyPage() {
       amenities,
     });
     if (result.ok) {
+      toast.success("Company updated.");
       router.push("/admin/companies"); // back to the list
     } else {
+      toast.error(result.error);
       setMessage(result.error);
       setSaving(false);
     }

@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { apiGet, apiPost } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -107,8 +108,10 @@ export default function EditCompanyPage() {
       amenities,
     });
     if (result.ok) {
+      toast.success("Company profile updated.");
       router.push("/owner"); // back to the dashboard, which reloads fresh data
     } else {
+      toast.error(result.error);
       setMessage(result.error);
       setSaving(false);
     }

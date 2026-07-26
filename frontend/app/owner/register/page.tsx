@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -75,9 +76,11 @@ export default function RegisterBusinessPage() {
     const result = await apiPost("/companies/register", { ...form, amenities });
 
     if (result.ok) {
+      toast.success("Business submitted - an admin will review it.");
       setDone(true);
     } else {
       // e.g. the name is taken, or this account already registered a business
+      toast.error(result.error);
       setMessage(result.error);
       setSaving(false);
     }
