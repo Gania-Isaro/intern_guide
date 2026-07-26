@@ -50,4 +50,4 @@ __pycache__/
 backend/uploads/
 
 # local agent notes, not part of the repo
-/AGENTS.md
+AGENTS.md
