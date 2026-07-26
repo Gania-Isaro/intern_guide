@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
 import { AMENITY_LABELS, COMPENSATION_LABELS, SCHEDULE_LABELS, WORK_MODE_LABELS, } from "@/lib/labels";
@@ -63,6 +63,9 @@ function CompaniesBrowser() {
     const [data, setData] = React.useState<CompanyListResponse | null>(null);
     const [status, setStatus] = React.useState<"loading" | "ready" | "error">("loading");
     const [reloadKey, setReloadKey] = React.useState(0);
+    // on a phone the filter panel is collapsed by default so the companies show
+    // first; on desktop (lg+) the sidebar is always visible.
+    const [filtersOpen, setFiltersOpen] = React.useState(false);
 
     // Build a new URL for this page, keeping the other query bits (like ?search)
     // that are already there. Reads the live URL each time, so it is never stale.
@@ -179,6 +182,11 @@ function CompaniesBrowser() {
         schedule.length > 0 ||
         amenity.length > 0;
 
+    // how many filters are on (not counting the search box) - shown on the
+    // mobile "Filters" button so users know filters are active while collapsed
+    const activeCount =
+        (industry ? 1 : 0) + compensation.length + workMode.length + schedule.length + amenity.length;
+
     return (
     <div className="space-y-6 py-2">
       <header className="space-y-2">
@@ -202,10 +210,27 @@ function CompaniesBrowser() {
         />
       </div>
 
+      {/* --- mobile only: a button to open/close the filters, so the list of
+             companies is the first thing a phone user sees --- */}
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((v) => !v)}
+        aria-expanded={filtersOpen}
+        className="flex w-full items-center justify-between rounded-control border border-border bg-white px-4 py-3 text-body text-ink lg:hidden"
+      >
+        <span className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-ink-muted" />
+          Filters{activeCount > 0 ? ` (${activeCount})` : ""}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-ink-muted transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
       {/* --- two columns: filters on the left, companies on the right --- */}
       <div className="flex flex-col gap-8 lg:flex-row">
-        {/* ---------- left: the filter sidebar ---------- */}
-        <aside className="lg:w-72 lg:shrink-0">
+        {/* ---------- left: the filter sidebar (collapsible on phones) ---------- */}
+        <aside className={`lg:w-72 lg:shrink-0 ${filtersOpen ? "block" : "hidden lg:block"}`}>
           <div className="space-y-5 rounded-card border border-border bg-white p-5 shadow-soft lg:sticky lg:top-24">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-card-title text-ink">Filters</h2>

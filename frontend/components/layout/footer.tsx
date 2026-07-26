@@ -36,7 +36,8 @@ function Footer() {
   return (
     <footer className="border-t border-border bg-white">
       <div className="container flex flex-col gap-9 pb-10 pt-14">
-        <div className="flex items-start justify-between">
+        {/* stacks on a phone, sits in a row from md up */}
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           {/* Brand + tagline */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-1.5">
@@ -53,8 +54,8 @@ function Footer() {
             </p>
           </div>
 
-          {/* The 3 link columns, built from the array above */}
-          <div className="flex gap-[72px]">
+          {/* 2-column grid on a phone (fits 320px), a spaced row from sm up */}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-8 sm:flex sm:gap-12 md:gap-[72px]">
             {LINK_COLUMNS.map((col) => (
               <div key={col.title} className="flex flex-col gap-3">
                 <p className="text-label text-ink">{col.title}</p>
@@ -72,8 +73,8 @@ function Footer() {
         {/* Thin divider line */}
         <div className="h-px w-full bg-border" />
 
-        {/* Bottom row: copyright + tech stack */}
-        <div className="flex items-center justify-between text-[13px] text-ink-muted">
+        {/* Bottom row: copyright + tech stack - stacks on a phone */}
+        <div className="flex flex-col gap-2 text-[13px] text-ink-muted md:flex-row md:items-center md:justify-between">
           <p>© {year} InternGuide · Built by THE GRID · African Leadership University</p>
           <p>Next.js · Flask · MySQL</p>
         </div>
