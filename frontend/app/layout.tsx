@@ -32,10 +32,20 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col font-sans antialiased">
         <AuthProvider>
           <BookmarkProvider>
+            {/* keyboard users can jump straight past the nav to the content */}
+            <a href="#main-content" className="skip-link">
+              Skip to main content
+            </a>
             {/* global toast notifications; top-center stays clear of the mobile keyboard */}
             <Toaster position="top-center" richColors closeButton />
             <Navbar />
-            <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="mx-auto w-full max-w-6xl flex-1 px-6 py-8 focus:outline-none"
+            >
+              {children}
+            </main>
             <Footer />
           </BookmarkProvider>
         </AuthProvider>

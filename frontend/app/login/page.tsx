@@ -7,6 +7,7 @@ import { apiPost } from "@/lib/api";
 import { validateLoginForm } from "@/lib/validation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { PasswordInput } from "@/components/ui/password-input";
+import { FieldError } from "@/components/ui/field-error";
   
 
 // Where to go after logging in. Middleware adds ?from=/owner when it bounces a
@@ -22,10 +23,9 @@ function safeReturnPath() {
 }
 
 function inputClass(hasError: boolean) {
- const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
-  return hasError
-   ? `${base} border-red-500 focus:ring-red-200`
-   : `${base} border-gray-300 focus:ring-green-200`;
+  const base =
+    "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring";
+  return hasError ? `${base} border-danger` : `${base} border-gray-300`;
 }
 
 export default function LoginPage() {
@@ -89,7 +89,7 @@ export default function LoginPage() {
         <p className="text-gray-600 text-sm mb-6">Log in to manage your reviews.</p>
 
         {submitError && (
-          <p className="text-red-500 text-sm mb-4">{submitError}</p>
+          <p role="alert" className="text-danger text-sm mb-4">{submitError}</p>
         )}
 
         <div className="mb-4">
@@ -103,9 +103,11 @@ export default function LoginPage() {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
             className={inputClass(!!errors.email)}
           />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+          <FieldError id="email-error">{errors.email}</FieldError>
         </div>
 
         <div className="mb-4">
@@ -118,13 +120,15 @@ export default function LoginPage() {
             autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "password-error" : undefined}
             className={inputClass(!!errors.password)}
           />
-          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+          <FieldError id="password-error">{errors.password}</FieldError>
         </div>
 
         <p className="text-sm text-right mb-6">
-          <a href="/forgot-password" className="text-green-600 hover:underline">
+          <a href="/forgot-password" className="text-primary-deep underline">
             Forgot password?
           </a>
         </p>
@@ -132,7 +136,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Logging in..." : "Log in"}
         </button>
@@ -143,7 +147,7 @@ export default function LoginPage() {
 
         <p className="text-sm text-gray-600 mt-4 text-center">
           New to InternGuide?{" "}
-          <a href="/register" className="text-green-600 hover:underline">
+          <a href="/register" className="text-primary-deep underline">
             Create an account
           </a>
         </p>

@@ -34,7 +34,7 @@ export function HeroSearch() {
           onChange={(e) => setTerm(e.target.value)}
           aria-label="Search a company"
           placeholder="Search a company, e.g. Kivu Software"
-          className="h-12 w-full rounded-md border border-border pl-10 pr-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          className="h-12 w-full rounded-md border border-border pl-10 pr-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none"
         />
       </div>
       <Button variant="primary" size="lg" type="submit">

@@ -218,14 +218,19 @@ function NewReviewForm() {
             >
               <div>
                 <p className="text-card-title text-ink">{cat.label}</p>
-                <p className="text-sm text-ink-muted">{cat.hint}</p>
+                <p id={`${cat.key}-hint`} className="text-sm text-ink-muted">{cat.hint}</p>
                 {errors[cat.key] && (
-                  <p className="mt-1 text-sm text-danger">{errors[cat.key]}</p>
+                  <p id={`${cat.key}-error`} role="alert" className="mt-1 text-sm text-danger">
+                    {errors[cat.key]}
+                  </p>
                 )}
               </div>
               <StarRating
                 value={scores[cat.key]}
                 size="lg"
+                label={cat.label}
+                describedById={errors[cat.key] ? `${cat.key}-error` : `${cat.key}-hint`}
+                invalid={!!errors[cat.key]}
                 onChange={(value) => {
                   setScores((prev) => ({ ...prev, [cat.key]: value }));
                   setErrors((prev) => ({ ...prev, [cat.key]: "" }));

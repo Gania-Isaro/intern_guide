@@ -12,6 +12,12 @@ node_modules/
 
 # testing
 coverage/
+# playwright (e2e / accessibility) output
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/.playwright/
+frontend/playwright/.auth/
 
 endpoints.md
 testing.md

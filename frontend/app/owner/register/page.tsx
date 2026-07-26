@@ -160,7 +160,7 @@ export default function RegisterBusinessPage() {
               id="size"
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
-              className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+              className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-ring focus:ring-2 focus:ring-ring"
             >
               <option value="">Not saying</option>
               {SIZES.map((size) => (
@@ -190,7 +190,7 @@ export default function RegisterBusinessPage() {
             rows={3}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+            className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-ring focus:ring-2 focus:ring-ring"
           />
         </div>
 

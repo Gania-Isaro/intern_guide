@@ -15,10 +15,10 @@ import { apiPost } from "@/lib/api";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const inputClass =
-  "w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-200";
+  "w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring";
 
 const buttonClass =
-  "w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+  "w-full bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 type Step = "email" | "code" | "password" | "done";
 
@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
               Enter the email for your account and we&apos;ll send you a code.
             </p>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && <p id="fp-email-error" role="alert" className="text-danger text-sm mb-4">{error}</p>}
 
             <div className="mb-6">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -136,6 +136,8 @@ export default function ForgotPasswordPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={!!error}
+                aria-describedby={error ? "fp-email-error" : undefined}
                 className={inputClass}
               />
             </div>
@@ -151,7 +153,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={verifyCode}>
             {notice && <p className="text-gray-600 text-sm mb-6">{notice}</p>}
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && <p id="fp-code-error" role="alert" className="text-danger text-sm mb-4">{error}</p>}
 
             <div className="mb-6">
               <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
@@ -165,6 +167,8 @@ export default function ForgotPasswordPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="123456"
+                aria-invalid={!!error}
+                aria-describedby={error ? "fp-code-error" : undefined}
                 className={`${inputClass} tracking-widest`}
               />
             </div>
@@ -190,7 +194,7 @@ export default function ForgotPasswordPage() {
               Code verified. Choose a new password for your account.
             </p>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && <p id="fp-pw-error" role="alert" className="text-danger text-sm mb-4">{error}</p>}
 
             <div className="mb-6">
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
@@ -201,10 +205,11 @@ export default function ForgotPasswordPage() {
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                aria-invalid={!!error}
+                aria-describedby={error ? "fp-pw-error" : "fp-pw-hint"}
                 className={inputClass}
-                autoFocus
               />
-              <p className="text-gray-500 text-xs mt-1">At least 8 characters.</p>
+              <p id="fp-pw-hint" className="text-gray-500 text-xs mt-1">At least 8 characters.</p>
             </div>
 
             <button type="submit" disabled={isSubmitting} className={buttonClass}>
@@ -228,7 +233,7 @@ export default function ForgotPasswordPage() {
         {step !== "done" && (
           <p className="text-sm text-gray-600 mt-4 text-center">
             Remembered it?{" "}
-            <a href="/login" className="text-green-600 hover:underline">
+            <a href="/login" className="text-primary-deep underline">
               Back to login
             </a>
           </p>

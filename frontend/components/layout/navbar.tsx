@@ -121,14 +121,16 @@ function Navbar() {
           type="button"
           className="inline-flex h-10 w-10 items-center justify-center rounded-control md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          aria-controls="mobile-menu"
           onClick={() => setOpen((v) => !v)} // flips open/closed each tap
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
         </button>
       </div>
 
       {/* Mobile dropdown menu - only shows when open is true */}
-      <nav className={cn("flex-col gap-1 border-t border-border px-6 pb-4 pt-2 md:hidden", open ? "flex" : "hidden")}>
+      <nav id="mobile-menu" aria-label="Main menu" className={cn("flex-col gap-1 border-t border-border px-6 pb-4 pt-2 md:hidden", open ? "flex" : "hidden")}>
         {links.map((link) => (
           <Link
             key={link.label}
