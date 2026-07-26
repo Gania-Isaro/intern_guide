@@ -1,0 +1,652 @@
+openapi: 3.0.3
+info:
+  title: InternGuide API
+  version: "1.0.0"
+  description: >
+    REST API for InternGuide - a platform where verified interns review the
+    companies they interned at. Authentication uses a JWT stored in an httpOnly
+    cookie named `token`, set by `POST /auth/login`. Endpoints marked with a
+    lock require that cookie; some also require a specific role
+    (student, company_owner, or admin).
+servers:
+  - url: https://api.gania.tech
+    description: Production
+  - url: http://localhost:5001
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Register, log in, sessions, and password reset
+  - name: Companies
+    description: Public browsing of companies and their stats
+  - name: Reviews
+    description: Writing and reading reviews; a student's own activity
+  - name: Verification
+    description: Uploading proof of placement
+  - name: Owner
+    description: Company owners managing their business and internships
+  - name: Admin
+    description: Moderation and company management (admin only)
+  - name: System
+    description: Health and documentation
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: not logged in
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+    User:
+      type: object
+      properties:
+        id: { type: integer, example: 10 }
+        name: { type: string, example: Aline Uwase }
+        email: { type: string, format: email }
+        role: { type: string, enum: [student, company_owner, admin] }
+        is_verified: { type: boolean }
+    Company:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        industry: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        average_rating: { type: number, format: float, nullable: true }
+        review_count: { type: integer }
+    Review:
+      type: object
+      properties:
+        id: { type: integer }
+        company_id: { type: integer }
+        company_name: { type: string }
+        rating: { type: number, format: float }
+        mentorship: { type: integer, minimum: 1, maximum: 5 }
+        tasks: { type: integer, minimum: 1, maximum: 5 }
+        learning: { type: integer, minimum: 1, maximum: 5 }
+        environment: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, nullable: true }
+        status: { type: string, enum: [pending, approved, rejected] }
+        created_at: { type: string, format: date-time }
+    Placement:
+      type: object
+      properties:
+        company_id: { type: integer }
+        company_name: { type: string }
+        status: { type: string, enum: [approved, pending, rejected] }
+        reviewed: { type: boolean }
+        last_submitted: { type: string, format: date-time }
+
+  responses:
+    Unauthorized:
+      description: Not logged in
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Logged in but not allowed (wrong role or not verified)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+paths:
+  # ------------------------------------------------------------------ System
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { status: { type: string, example: ok } }
+
+  # -------------------------------------------------------------------- Auth
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account (student or company_owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                role: { type: string, enum: [student, company_owner], default: student }
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { description: Invalid input, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: Email already registered, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in; sets the httpOnly `token` cookie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Logged in (Set-Cookie header returned)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { description: Wrong email or password, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out; clears the token cookie
+      responses:
+        '200': { description: Logged out, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Who am I? Returns the current user, or null if logged out
+      responses:
+        '200':
+          description: The current user, or null
+          content:
+            application/json:
+              schema:
+                nullable: true
+                allOf:
+                  - $ref: '#/components/schemas/User'
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Email a 6-digit password reset code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string, format: email } }
+      responses:
+        '200': { description: Code sent, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '404': { description: Email is not registered, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/verify-reset-code:
+    post:
+      tags: [Auth]
+      summary: Check a reset code without spending it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, format: email }
+                code: { type: string, example: "042317" }
+      responses:
+        '200': { description: Code verified, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '403': { description: Wrong or expired code, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Set a new password using a valid reset code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, new_password]
+              properties:
+                email: { type: string, format: email }
+                code: { type: string }
+                new_password: { type: string, minLength: 8 }
+      responses:
+        '200': { description: Password reset, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '403': { description: Wrong or expired code, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  # --------------------------------------------------------------- Companies
+  /companies:
+    get:
+      tags: [Companies]
+      summary: List / search approved companies (paginated)
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: industry, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [rating, reviews, name, newest] } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, default: 12 } }
+        - { name: compensation, in: query, description: comma-separated, schema: { type: string } }
+        - { name: work_mode, in: query, description: comma-separated, schema: { type: string } }
+        - { name: schedule, in: query, description: comma-separated, schema: { type: string } }
+        - { name: amenity, in: query, description: comma-separated, schema: { type: string } }
+      responses:
+        '200':
+          description: A page of companies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  companies: { type: array, items: { $ref: '#/components/schemas/Company' } }
+                  page: { type: integer }
+                  per_page: { type: integer }
+                  total: { type: integer }
+                  total_pages: { type: integer }
+                  sort: { type: string }
+    post:
+      tags: [Admin]
+      summary: Admin creates a company (skips the queue, starts approved)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                industry: { type: string }
+                location: { type: string }
+      responses:
+        '201': { description: Company created }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /companies/{id}:
+    get:
+      tags: [Companies]
+      summary: Full company profile (details, internships, approved reviews)
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Company profile }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /companies/{id}/stats:
+    get:
+      tags: [Companies]
+      summary: Aggregated rating/demographic charts for a company
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Chart data }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /stats/summary:
+    get:
+      tags: [Companies]
+      summary: Platform totals (companies, reviews, industries)
+      responses:
+        '200':
+          description: Totals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  companies: { type: integer }
+                  reviews: { type: integer }
+                  industries: { type: integer }
+
+  # ----------------------------------------------------------------- Reviews
+  /reviews:
+    get:
+      tags: [Reviews]
+      summary: List approved reviews (optionally for one company)
+      parameters: [{ name: company_id, in: query, schema: { type: integer } }]
+      responses:
+        '200':
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { reviews: { type: array, items: { $ref: '#/components/schemas/Review' } } }
+    post:
+      tags: [Reviews]
+      summary: Submit a review (verified student, only for a company they were approved at)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company_id, mentorship, tasks, learning, environment]
+              properties:
+                company_id: { type: integer }
+                mentorship: { type: integer, minimum: 1, maximum: 5 }
+                tasks: { type: integer, minimum: 1, maximum: 5 }
+                learning: { type: integer, minimum: 1, maximum: 5 }
+                environment: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string }
+                gender: { type: string, enum: [female, male, other, ""] }
+                intern_year: { type: integer }
+      responses:
+        '201': { description: Review submitted (pending moderation) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not verified for this company, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: Already reviewed this company, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /reviews/{id}/reply:
+    post:
+      tags: [Reviews]
+      summary: Company owner replies to a review on their company
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties: { body: { type: string } }
+      responses:
+        '201': { description: Reply saved }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /me/reviews:
+    get:
+      tags: [Reviews]
+      summary: The logged-in student's own reviews (any status)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: My reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { reviews: { type: array, items: { $ref: '#/components/schemas/Review' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /me/placements:
+    get:
+      tags: [Reviews]
+      summary: IDs of companies the student may review (approved proof)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: Company ids
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { company_ids: { type: array, items: { type: integer } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /me/proofs:
+    get:
+      tags: [Reviews]
+      summary: Per-company proof status for the student (approved/pending/rejected)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: Placements with status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { placements: { type: array, items: { $ref: '#/components/schemas/Placement' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ------------------------------------------------------------ Verification
+  /verification-proofs:
+    post:
+      tags: [Verification]
+      summary: Upload proof of placement for a company (pdf/png/jpg, max 5 MB)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [company_id, file]
+              properties:
+                company_id: { type: integer }
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: Proof submitted (pending) }
+        '400': { description: Missing/invalid file, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: Already pending or approved here, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  # ------------------------------------------------------------------- Owner
+  /companies/register:
+    post:
+      tags: [Owner]
+      summary: A company owner registers a business (starts pending)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                industry: { type: string }
+                location: { type: string }
+                website: { type: string }
+                google_address: { type: string }
+                size: { type: string, enum: ["1-10", "11-50", "51-200", "200+"] }
+                founded_year: { type: integer }
+      responses:
+        '201': { description: "Registered, pending admin approval" }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /me/company:
+    get:
+      tags: [Owner]
+      summary: The owner's company with its internships, stats, and reviews
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: Company dashboard data }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Owner has no company yet, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /companies/{id}/edit:
+    post:
+      tags: [Owner]
+      summary: Edit a company's profile (owner of it, or admin)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Updated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /companies/{id}/internships:
+    post:
+      tags: [Owner]
+      summary: Post an internship on an approved company
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                field: { type: string }
+                location: { type: string }
+                compensation: { type: string, enum: [paid, stipend, unpaid, academic_credit, intern_pays] }
+                work_mode: { type: string, enum: [onsite, hybrid, remote] }
+                schedule: { type: string, enum: [full_time, part_time, flexible] }
+                duration_months: { type: integer }
+                openings: { type: integer }
+      responses:
+        '201': { description: Internship posted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /internships/{id}/toggle:
+    post:
+      tags: [Owner]
+      summary: Open/close an internship posting
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Toggled }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ------------------------------------------------------------------- Admin
+  /admin/companies:
+    get:
+      tags: [Admin]
+      summary: Companies waiting for approval
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: Pending companies }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/companies/all:
+    get:
+      tags: [Admin]
+      summary: Every company (any status)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: All companies }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/companies/{id}:
+    get:
+      tags: [Admin]
+      summary: One company's editable fields
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Company }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Admin]
+      summary: Permanently delete a company (and its proofs/reviews via cascade)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/companies/{id}/approve:
+    post:
+      tags: [Admin]
+      summary: Approve a pending company
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Approved }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/companies/{id}/reject:
+    post:
+      tags: [Admin]
+      summary: Reject a pending company
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Rejected }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/companies/{id}/deactivate:
+    post:
+      tags: [Admin]
+      summary: Hide an approved company from search
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Deactivated }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/companies/{id}/activate:
+    post:
+      tags: [Admin]
+      summary: Re-activate a company
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Activated }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/reviews:
+    get:
+      tags: [Admin]
+      summary: Reviews waiting for moderation
+      security: [{ cookieAuth: [] }]
+      responses: { '200': { description: Pending reviews }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/reviews/{id}/approve:
+    post:
+      tags: [Admin]
+      summary: Approve a review (makes it public)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Approved }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/reviews/{id}/reject:
+    post:
+      tags: [Admin]
+      summary: Reject a review
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Rejected }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/proofs:
+    get:
+      tags: [Admin]
+      summary: Proofs of placement waiting for review
+      security: [{ cookieAuth: [] }]
+      responses: { '200': { description: Pending proofs }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/proofs/{id}/file:
+    get:
+      tags: [Admin]
+      summary: Preview an uploaded proof document (admin only)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: The file (pdf/image), content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /admin/proofs/{id}/approve:
+    post:
+      tags: [Admin]
+      summary: Approve a proof (verifies the student for that company)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Approved }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/proofs/{id}/reject:
+    post:
+      tags: [Admin]
+      summary: Reject a proof
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Rejected }, '403': { $ref: '#/components/responses/Forbidden' } }

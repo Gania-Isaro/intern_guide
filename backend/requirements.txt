@@ -5,3 +5,6 @@ pyjwt
 python-dotenv
 pytest
 gunicorn
+Flask-Limiter
+flask-swagger-ui
+redis
