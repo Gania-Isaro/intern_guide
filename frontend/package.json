@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "lint:a11y": "eslint --config eslint.a11y.config.mjs app components",
+    "test": "vitest run",
+    "test:a11y": "playwright test"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.19",
@@ -23,12 +25,15 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.5.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "postcss": "^8.5.16",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",

@@ -539,7 +539,7 @@ function AddInternshipForm({
           <textarea
             id="internship_description"
             rows={4}
-            className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+            className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-ring focus:ring-2 focus:ring-ring"
             value={form.description}
             onChange={(e) => set("description", e.target.value)}
           />
@@ -580,7 +580,7 @@ function Select({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+        className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-ring focus:ring-2 focus:ring-ring"
       >
         {placeholder && <option value="">{placeholder}</option>}
         {Object.entries(options).map(([code, text]) => (
@@ -681,7 +681,7 @@ function ReviewRow({
             rows={2}
             aria-label={`Reply to ${review.reviewer_name}`}
             placeholder="Reply to this intern…"
-            className="w-full rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+            className="w-full rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-ring focus:ring-2 focus:ring-ring"
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />

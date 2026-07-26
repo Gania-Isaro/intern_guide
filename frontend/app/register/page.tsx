@@ -6,12 +6,12 @@ import { toast } from "sonner";
 import { apiPost } from "@/lib/api";
 import { validateRegisterForm } from "@/lib/validation";
 import { PasswordInput } from "@/components/ui/password-input";
+import { FieldError } from "@/components/ui/field-error";
 
 function inputClass(hasError: boolean) {
-  const base = "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2";
-  return hasError
-    ? `${base} border-red-500 focus:ring-red-200`
-    : `${base} border-gray-300 focus:ring-green-200`;
+  const base =
+    "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring";
+  return hasError ? `${base} border-danger` : `${base} border-gray-300`;
 }
 export default function RegisterPage() {
   const router = useRouter();
@@ -77,7 +77,7 @@ async function handleSubmit(e: React.FormEvent) {
         <p className="text-gray-600 text-sm mb-6">Join to read and write verified reviews.</p>
 
         {submitError && (
-          <p className="text-red-500 text-sm mb-4">{submitError}</p>
+          <p role="alert" className="text-danger text-sm mb-4">{submitError}</p>
         )}
 
         <div className="mb-4">
@@ -91,9 +91,11 @@ async function handleSubmit(e: React.FormEvent) {
             autoComplete="name"
             value={formData.fullName}
             onChange={handleChange}
+            aria-invalid={!!errors.fullName}
+            aria-describedby={errors.fullName ? "fullName-error" : undefined}
             className={inputClass(!!errors.fullName)}
           />
-          {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+          <FieldError id="fullName-error">{errors.fullName}</FieldError>
         </div>
 
         <div className="mb-4">
@@ -107,9 +109,11 @@ async function handleSubmit(e: React.FormEvent) {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
             className={inputClass(!!errors.email)}
           />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+          <FieldError id="email-error">{errors.email}</FieldError>
         </div>
 
         <div className="mb-4">
@@ -122,9 +126,11 @@ async function handleSubmit(e: React.FormEvent) {
             autoComplete="new-password"
             value={formData.password}
             onChange={handleChange}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "password-error" : undefined}
             className={inputClass(!!errors.password)}
           />
-          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+          <FieldError id="password-error">{errors.password}</FieldError>
         </div>
 
         <div className="mb-4">
@@ -137,11 +143,11 @@ async function handleSubmit(e: React.FormEvent) {
             autoComplete="new-password"
             value={formData.confirmPassword}
             onChange={handleChange}
+            aria-invalid={!!errors.confirmPassword}
+            aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
             className={inputClass(!!errors.confirmPassword)}
           />
-          {errors.confirmPassword && (
-            <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
-          )}
+          <FieldError id="confirmPassword-error">{errors.confirmPassword}</FieldError>
         </div>
 
         <div className="mb-6">
@@ -163,7 +169,7 @@ async function handleSubmit(e: React.FormEvent) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
@@ -174,7 +180,7 @@ async function handleSubmit(e: React.FormEvent) {
 
         <p className="text-sm text-gray-600 mt-4 text-center">
           Already have an account?{" "}
-          <a href="/login" className="text-green-600 hover:underline">
+          <a href="/login" className="text-primary-deep underline">
             Log in
           </a>
         </p>

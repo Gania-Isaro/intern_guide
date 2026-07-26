@@ -526,7 +526,7 @@ function AddCompanyForm({ onCreated }: { onCreated: () => void }) {
         <textarea
           id="description"
           rows={3}
-          className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-primary"
+          className="rounded-control border border-border bg-white px-3 py-2 text-body outline-none focus:border-ring focus:ring-2 focus:ring-ring"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />

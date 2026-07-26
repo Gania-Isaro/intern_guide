@@ -26,10 +26,13 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
         onClick={() => setShow((value) => !value)}
         aria-label={show ? "Hide password" : "Show password"}
         aria-pressed={show}
-        tabIndex={-1} // skipped by Tab, so typing flows straight to the next field
         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
       >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        {show ? (
+          <EyeOff className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Eye className="h-4 w-4" aria-hidden="true" />
+        )}
       </button>
     </div>
   );

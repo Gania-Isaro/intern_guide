@@ -1,10 +1,16 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Accessibility linting at code-time: flags missing alt text, unlabelled
+  // controls, invalid ARIA, non-interactive elements with handlers, etc.
+  // eslint-config-next already registers the jsx-a11y plugin, so we only turn
+  // on its full recommended ruleset here (re-adding the plugin would error).
+  { rules: { ...jsxA11y.flatConfigs.recommended.rules } },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -12,6 +18,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Playwright output
+    "test-results/**",
+    "playwright-report/**",
   ]),
 ]);
 

@@ -1,0 +1,63 @@
+name: CI
+
+# Quality gates that run on every pull request and push to the shared branches.
+# These are separate from deploy.yml (which only runs on main): CI gives fast
+# pass/fail status on PRs before anything is merged or deployed.
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          python -m pip install --quiet -r requirements.txt
+          python -m pytest -q
+
+  frontend-a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      # code-time accessibility rules (jsx-a11y): unlabelled controls, invalid
+      # ARIA, missing alt text, etc. Fast, no browser needed.
+      - name: Accessibility lint
+        working-directory: frontend
+        run: npm run lint:a11y
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.gania.tech
+      # runtime accessibility scan (axe-core) against every key page - catches
+      # contrast, names/roles/values and other things a linter cannot see.
+      - name: Accessibility scan (axe)
+        working-directory: frontend
+        run: npm run test:a11y
+        env:
+          NEXT_PUBLIC_API_URL: https://api.gania.tech
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
