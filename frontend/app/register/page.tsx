@@ -59,8 +59,8 @@ async function handleSubmit(e: React.FormEvent) {
       return;
     }
 
-    toast.success("Account created - please log in.");
-    router.push("/login");
+    toast.success("Account created - check your email for a code.");
+    router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
   }
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

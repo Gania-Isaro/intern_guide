@@ -186,7 +186,7 @@ export default function CompanyProfilePage({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <h1 className="text-heading text-ink">{company.name}</h1>
-              {user && (
+              {user?.role === "student" && (
                 <button
                   type="button"
                   onClick={() => toggle({ id: company.id, name: company.name })}

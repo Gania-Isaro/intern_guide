@@ -146,12 +146,51 @@ paths:
                 role: { type: string, enum: [student, company_owner], default: student }
       responses:
         '201':
-          description: Account created
+          description: "Account created and a 6-digit verification code emailed. The account cannot log in until the email is verified."
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  email: { type: string, format: email }
         '400': { description: Invalid input, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '409': { description: Email already registered, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Confirm a new account's email with the 6-digit code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, format: email }
+                code: { type: string, example: "042317" }
+      responses:
+        '200': { description: Email verified, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '403': { description: Wrong or expired code, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Email a fresh verification code to an unverified account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string, format: email } }
+      responses:
+        '200': { description: Sent (or a no-op if already verified), content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /auth/login:

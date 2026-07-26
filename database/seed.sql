@@ -201,3 +201,6 @@ UPDATE companies c
        FROM reviews r
       WHERE r.company_id = c.id AND r.status = 'approved'
    );
+
+-- demo accounts are pre-verified so their logins work
+UPDATE users SET email_verified = TRUE;

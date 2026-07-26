@@ -71,8 +71,8 @@ export function CompanyCard({
                 </div>
             </Link>
 
-            {/* save/bookmark heart - only for logged-in users */}
-            {user && (
+            {/* save/bookmark heart - only students have a Saved page */}
+            {user?.role === "student" && (
                 <button
                     type="button"
                     onClick={() => toggle({ id: company.id, name: company.name })}

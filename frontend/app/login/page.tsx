@@ -61,6 +61,12 @@ export default function LoginPage() {
     setIsSubmitting(false);
 
     if (!result.ok) {
+      // an unverified account is sent to the verify step, not left on an error
+      if (/verify your email/i.test(result.error)) {
+        toast.error(result.error);
+        router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+        return;
+      }
       setSubmitError(result.error);
       return;
     }
