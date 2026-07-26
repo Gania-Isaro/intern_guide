@@ -19,6 +19,10 @@ class Config:
     # keep False for local http, set to true in production where we have https
     COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
+    # In production set COOKIE_DOMAIN=.gania.tech so the auth cookie is shared by
+    # the api and frontend subdomains. Unset (None) locally = host-only cookie.
+    COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN") or None
+
     # Where the rate limiter keeps its counters. In production this is Redis
     # (shared across gunicorn workers); with no REDIS_URL it falls back to
     # per-process memory, which is fine for local development.

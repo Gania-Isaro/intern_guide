@@ -93,6 +93,11 @@ def login():
         httponly=True,
         secure=current_app.config["COOKIE_SECURE"],
         samesite="Lax",
+        # In production the API (api.gania.tech) and frontend
+        # (internguide.gania.tech) are different subdomains. Scoping the cookie
+        # to the shared parent (.gania.tech) lets BOTH see it, so the frontend's
+        # middleware recognises a logged-in user. Empty locally = host-only.
+        domain=current_app.config["COOKIE_DOMAIN"],
     )
     return response
 
@@ -100,7 +105,8 @@ def login():
 @bp.post("/logout")
 def logout():
     response = jsonify(message="logged out")
-    response.delete_cookie(COOKIE_NAME)
+    # must match the domain the cookie was set with, or it won't be cleared
+    response.delete_cookie(COOKIE_NAME, domain=current_app.config["COOKIE_DOMAIN"])
     return response
 
 
