@@ -19,6 +19,12 @@ class Config:
     # keep False for local http, set to true in production where we have https
     COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
+    # Where the rate limiter keeps its counters. In production this is Redis
+    # (shared across gunicorn workers); with no REDIS_URL it falls back to
+    # per-process memory, which is fine for local development.
+    RATELIMIT_STORAGE_URI = os.getenv("REDIS_URL", "memory://")
+    RATELIMIT_HEADERS_ENABLED = True  # send X-RateLimit-* headers back to clients
+
     # SMTP email, used to send the "forgot password" code. Fill these in .env.
     # If SMTP_HOST is empty, emailing is simply skipped (the app still runs).
     SMTP_HOST = os.getenv("SMTP_HOST", "")
