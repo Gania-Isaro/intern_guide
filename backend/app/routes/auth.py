@@ -6,6 +6,7 @@ from flask import Blueprint, current_app, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db
+from ..extensions import limiter
 from ..utils.mailer import send_email
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -22,6 +23,7 @@ OTP_MAX_ATTEMPTS = 5   # wrong guesses allowed before the code is burned
 
 
 @bp.post("/register")
+@limiter.limit("5 per minute")
 def register():
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
@@ -56,6 +58,7 @@ def register():
 
 
 @bp.post("/login")
+@limiter.limit("10 per minute")
 def login():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
@@ -102,6 +105,7 @@ def logout():
 
 
 @bp.post("/forgot-password")
+@limiter.limit("5 per minute; 20 per hour")
 def forgot_password():
     # Step 1 of a reset: the user gives their email and we mail them a code.
     data = request.get_json(silent=True) or {}
@@ -196,6 +200,7 @@ def _check_reset_code(db, cursor, email, code):
 
 
 @bp.post("/verify-reset-code")
+@limiter.limit("15 per minute")
 def verify_reset_code():
     # Step 2 of a reset: check ONLY the code. The code is not spent here, so the
     # next step can still use it to actually set the new password.
@@ -216,6 +221,7 @@ def verify_reset_code():
 
 
 @bp.post("/reset-password")
+@limiter.limit("10 per minute")
 def reset_password():
     # Step 3 of a reset: with a good code, set the new password and spend it.
     data = request.get_json(silent=True) or {}
