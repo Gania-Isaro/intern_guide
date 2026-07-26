@@ -6,6 +6,7 @@ import { ShieldCheck, Menu, X } from "lucide-react";
 
 import { useAuth, type AuthUser } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui";
+import { InstallButton } from "@/components/pwa/install-button";
 import { cn } from "@/lib/utils";
 
 // The links shown when nobody is logged in.
@@ -92,8 +93,11 @@ function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop auth area - Log out when signed in, else the two buttons */}
+        {/* Desktop auth area - Log out when signed in, else the two buttons.
+            The install button sits first and shows itself only when the app can
+            actually be installed. */}
         <div className="hidden items-center gap-3 md:flex">
+          <InstallButton className="text-[14.5px] font-semibold text-ink-secondary hover:text-ink" />
           {isLoading ? (
             <span className="text-[14.5px] text-ink-muted">Loading…</span>
           ) : user ? (
@@ -141,6 +145,7 @@ function Navbar() {
             {link.label}
           </Link>
         ))}
+        <InstallButton className="rounded-control px-2 py-2.5 text-[14.5px] font-semibold text-ink-secondary hover:bg-paper" />
         {user ? (
           <>
             <p className="px-2 pb-1 pt-3 text-label text-ink-muted">{user.email}</p>
