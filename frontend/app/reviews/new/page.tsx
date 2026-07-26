@@ -7,6 +7,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 import { apiGet, apiPost } from "@/lib/api";
 import { validateReviewForm, type ReviewScores } from "@/lib/validation";
@@ -186,7 +187,8 @@ function NewReviewForm() {
       return;
     }
 
-    // done - show them their submission with its pending status
+    // done - confirm, then show them their submission with its pending status
+    toast.success("Review submitted - an admin will check it before it goes live.");
     router.push("/my-reviews");
   }
 

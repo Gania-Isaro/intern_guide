@@ -10,6 +10,7 @@
 // The email and code are kept in state, so the later steps already have them.
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { apiPost } from "@/lib/api";
 import { PasswordInput } from "@/components/ui/password-input";
 
@@ -47,6 +48,7 @@ export default function ForgotPasswordPage() {
       setError(result.error);
       return;
     }
+    toast.success("Code sent - check your email.");
     setNotice(
       "A 6-digit code is on its way to your email. Enter it below."
     );
@@ -70,6 +72,7 @@ export default function ForgotPasswordPage() {
       setError(result.error);
       return;
     }
+    toast.success("Code verified.");
     setStep("password");
   }
 
@@ -96,6 +99,7 @@ export default function ForgotPasswordPage() {
       setStep("code");
       return;
     }
+    toast.success("Password reset - you can now log in.");
     setStep("done");
   }
 
@@ -129,6 +133,7 @@ export default function ForgotPasswordPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputClass}
@@ -155,6 +160,7 @@ export default function ForgotPasswordPage() {
               <input
                 id="code"
                 inputMode="numeric"
+                autoComplete="one-time-code"
                 maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
@@ -192,6 +198,7 @@ export default function ForgotPasswordPage() {
               </label>
               <PasswordInput
                 id="newPassword"
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className={inputClass}

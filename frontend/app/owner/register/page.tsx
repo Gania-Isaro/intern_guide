@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -75,9 +76,11 @@ export default function RegisterBusinessPage() {
     const result = await apiPost("/companies/register", { ...form, amenities });
 
     if (result.ok) {
+      toast.success("Business submitted - an admin will review it.");
       setDone(true);
     } else {
       // e.g. the name is taken, or this account already registered a business
+      toast.error(result.error);
       setMessage(result.error);
       setSaving(false);
     }
@@ -105,6 +108,7 @@ export default function RegisterBusinessPage() {
         <Input
           id="name"
           label="Business name"
+          autoComplete="organization"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
@@ -120,6 +124,7 @@ export default function RegisterBusinessPage() {
           <Input
             id="location"
             label="City"
+            autoComplete="address-level2"
             value={form.location}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
             placeholder="Kigali"
@@ -129,6 +134,8 @@ export default function RegisterBusinessPage() {
         <Input
           id="website"
           label="Website"
+          type="url"
+          inputMode="url"
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
           placeholder="https://"
@@ -138,6 +145,7 @@ export default function RegisterBusinessPage() {
         <Input
           id="google_address"
           label="Address on Google Maps"
+          autoComplete="street-address"
           value={form.google_address}
           onChange={(e) => setForm({ ...form, google_address: e.target.value })}
           placeholder="KG 7 Ave, Kigali, Rwanda"
@@ -166,6 +174,7 @@ export default function RegisterBusinessPage() {
             id="founded_year"
             label="Founded in"
             type="number"
+            inputMode="numeric"
             value={form.founded_year}
             onChange={(e) => setForm({ ...form, founded_year: e.target.value })}
             placeholder="2018"

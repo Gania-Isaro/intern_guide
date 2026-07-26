@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/utils";
 
 export type UserRole = "student" | "company_owner" | "admin";
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       setUser(null);
+      toast.success("You have been logged out.");
     }
   }, []);
 

@@ -8,6 +8,7 @@
 
 import * as React from "react";
 import { FileText } from "lucide-react";
+import { toast } from "sonner";
 
 import { apiGet, apiPost, API_URL } from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -127,10 +128,13 @@ export default function AdminPage() {
     setBusyId(`${kind}-${id}`);
     const result = await apiPost(`/admin/${kind}/${id}/${decision}`, {});
     if (result.ok) {
+      const noun = kind === "reviews" ? "Review" : "Proof";
+      toast.success(`${noun} ${decision === "approve" ? "approved" : "rejected"}.`);
       // the item is decided - remove it from its queue
       if (kind === "reviews") setReviews((list) => list.filter((r) => r.id !== id));
       else setProofs((list) => list.filter((p) => p.id !== id));
     } else {
+      toast.error(result.error);
       setError(result.error);
     }
     setBusyId(null);
