@@ -54,8 +54,8 @@ const RECENT_COMPANIES = [
 
 export default function HomePage() {
   return (
-    <div className="space-y-20 pb-16">
-      <section className="flex flex-col items-center pt-12 text-center">
+    <div className="space-y-14 pb-12 sm:space-y-20 sm:pb-16">
+      <section className="flex flex-col items-center pt-6 text-center sm:pt-12">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">
           <ShieldCheck className="h-3.5 w-3.5" />
           Every review is backed by proof
@@ -75,7 +75,7 @@ export default function HomePage() {
         <HeroStats />
       </section>
 
-      <section className="rounded-lg bg-muted px-6 py-14 text-center">
+      <section className="rounded-lg bg-muted px-6 py-10 text-center sm:py-14">
         <span className="text-xs font-semibold uppercase tracking-wide text-accent-600">
           How it works
         </span>
@@ -139,7 +139,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      <section className="rounded-lg bg-accent-50 px-6 py-14 text-center">
+      <section className="rounded-lg bg-accent-50 px-6 py-10 text-center sm:py-14">
   <h2 className="text-2xl font-bold text-foreground">
     Just finished your internship?
   </h2>

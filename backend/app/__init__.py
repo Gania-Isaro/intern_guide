@@ -9,7 +9,7 @@ from .config import Config
 from .db import close_db
 from .extensions import limiter
 from .security import apply_security_headers
-from .routes import auth, manage, moderation, rating, review, search, stats, verification
+from .routes import auth, bookmarks, manage, moderation, rating, review, search, stats, verification
 
 
 def create_app():
@@ -57,7 +57,7 @@ def create_app():
     )
     app.register_blueprint(swagger_ui, url_prefix="/docs")
 
-    for service in (auth, manage, search, review, rating, verification, moderation, stats):
+    for service in (auth, manage, search, review, rating, verification, moderation, stats, bookmarks):
         app.register_blueprint(service.bp)
 
     return app

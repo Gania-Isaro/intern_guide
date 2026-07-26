@@ -12,8 +12,22 @@ CREATE TABLE users (
   email         VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role          ENUM('student', 'company_owner', 'admin') NOT NULL DEFAULT 'student',
-  is_verified   BOOLEAN NOT NULL DEFAULT FALSE,
+  is_verified   BOOLEAN NOT NULL DEFAULT FALSE,  -- proof of placement approved
+  email_verified BOOLEAN NOT NULL DEFAULT FALSE, -- confirmed their email with a code
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- One-time codes emailed to a new account so it can confirm its email address.
+-- Same shape as password_reset_codes: hashed code, short expiry, attempt cap.
+CREATE TABLE email_verification_codes (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  code_hash  VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  used       BOOLEAN NOT NULL DEFAULT FALSE,
+  attempts   TINYINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE companies (
@@ -144,4 +158,16 @@ CREATE TABLE replies (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- A student's saved/bookmarked companies (a shortlist to revisit or compare).
+-- One row per (user, company); the unique key stops duplicates.
+CREATE TABLE bookmarks (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  company_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_bookmark (user_id, company_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
